@@ -385,6 +385,42 @@
     border-radius:10px;
     z-index:5;
   }
+  .pet-name-badge{
+    position:absolute;
+    left:12px; top:12px;
+    font-size:9.5px;
+    letter-spacing:.5px;
+    color:var(--ink);
+    background:rgba(255,253,248,0.85);
+    border:1px solid var(--line);
+    padding:3px 9px;
+    border-radius:10px;
+    z-index:5;
+    display:flex;
+    align-items:center;
+    gap:4px;
+    cursor:pointer;
+    font-family:inherit;
+  }
+  .pet-name-badge #petNameText{
+    font-style:normal;
+  }
+  .pet-name-badge.unnamed #petNameText{
+    color:var(--ink-soft);
+    font-style:italic;
+  }
+  .pet-name-edit-icon{ font-size:9px; opacity:.6; }
+  .pet-name-input{
+    width:100%;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:10px 12px;
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    font-size:14px;
+    color:var(--ink);
+    background:var(--card);
+    margin-bottom:12px;
+  }
 
   /* ================= CALENDAR PAGE ================= */
   .top-row{
@@ -788,11 +824,11 @@
     letter-spacing:1px;
     margin-bottom:10px;
   }
-  .scene-options{
+  .scene-options, .pet-options{
     display:flex;
     gap:10px;
   }
-  .scene-card{
+  .scene-card, .pet-card{
     flex:1;
     background:var(--card);
     border:1.5px solid var(--line);
@@ -803,7 +839,7 @@
     position:relative;
     transition:border-color .15s;
   }
-  .scene-card.selected{
+  .scene-card.selected, .pet-card.selected{
     border-color:var(--accent);
   }
   .scene-preview{
@@ -814,7 +850,15 @@
   .scene-preview.p-sky{ background:linear-gradient(180deg,#BFE3F0,#DCEFD9); }
   .scene-preview.p-land{ background:linear-gradient(180deg,#D9EFE2 42%,#93BE68 42%); }
   .scene-preview.p-ocean{ background:linear-gradient(180deg,#CFEFEF,#4B9DBE); }
-  .scene-card span{
+  .scene-preview.p-pet{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:26px;
+  }
+  .scene-preview.p-pet-axolotl{ background:linear-gradient(180deg,#FBDCE8,#F8C4D6); }
+  .scene-preview.p-pet-guinea{ background:linear-gradient(180deg,#F3E9D3,#E8D2A9); }
+  .scene-card span, .pet-card span{
     font-size:11px;
     color:var(--ink);
   }
@@ -830,7 +874,7 @@
     align-items:center;
     justify-content:center;
   }
-  .scene-card.selected .scene-check{ display:flex; }
+  .scene-card.selected .scene-check, .pet-card.selected .scene-check{ display:flex; }
 
   .settings-list{
     background:var(--card);
@@ -1294,6 +1338,10 @@
       </div>
 
       <div class="pet-scene scene-sky" id="petScene">
+        <button type="button" class="pet-name-badge unnamed" id="petNameBadge">
+          <span id="petNameText">寵物命名</span>
+          <span class="pet-name-edit-icon">✎</span>
+        </button>
         <!-- sky decor -->
         <div class="sun" data-scene-el="sky"></div>
         <div class="cloud c1" data-scene-el="sky"></div>
@@ -1331,7 +1379,7 @@
                 </g>
 
                 <!-- ===== Stage 2-5: body ===== -->
-                <g id="petBody" style="display:none;">
+                <g id="petBodyAxolotl" style="display:none;">
                   <ellipse cx="30" cy="82" rx="26" ry="16" fill="#F6B8CE"/>
                   <ellipse cx="95" cy="78" rx="66" ry="34" fill="#F8C4D6"/>
                   <ellipse cx="100" cy="96" rx="42" ry="14" fill="#FBD9E4"/>
@@ -1369,16 +1417,42 @@
                   <path d="M158,72 Q165,77 172,72" stroke="#B4527A" stroke-width="2.4" stroke-linecap="round" fill="none"/>
                   <circle cx="146" cy="68" r="5" fill="#F49CBB" opacity=".5"/>
                   <circle cx="184" cy="68" r="5" fill="#F49CBB" opacity=".5"/>
-
-                  <!-- stage 3+: type-themed accessory clip -->
-                  <g id="petAccessoryClip" style="display:none;"></g>
-                  <!-- stage 4+: artisan apron -->
-                  <g id="petApron" style="display:none;"></g>
-                  <!-- stage 4+: brewing tool -->
-                  <g id="petTool" style="display:none;"></g>
-                  <!-- stage 5: master crown -->
-                  <g id="petCrown" style="display:none;"></g>
                 </g>
+
+                <!-- ===== Guinea pig body ===== -->
+                <g id="petBodyGuinea" style="display:none;">
+                  <ellipse cx="110" cy="86" rx="72" ry="34" fill="#E8D2A9"/>
+                  <ellipse cx="70" cy="76" rx="26" ry="20" fill="#B9835A"/>
+                  <ellipse cx="150" cy="100" rx="24" ry="16" fill="#B9835A"/>
+                  <ellipse cx="70" cy="118" rx="10" ry="6" fill="#D9C29A"/>
+                  <ellipse cx="150" cy="118" rx="10" ry="6" fill="#D9C29A"/>
+                  <ellipse cx="168" cy="66" rx="38" ry="32" fill="#E8D2A9"/>
+                  <ellipse cx="150" cy="38" rx="8" ry="10" fill="#D9A876" transform="rotate(-20 150 38)"/>
+                  <ellipse cx="188" cy="38" rx="8" ry="10" fill="#D9A876" transform="rotate(20 188 38)"/>
+                  <circle cx="156" cy="62" r="4" fill="#2E2A24"/>
+                  <circle cx="184" cy="62" r="4" fill="#2E2A24"/>
+                  <circle cx="157.3" cy="60.5" r="1.3" fill="#fff"/>
+                  <circle cx="185.3" cy="60.5" r="1.3" fill="#fff"/>
+                  <ellipse cx="170" cy="76" rx="5" ry="3.5" fill="#B9835A"/>
+                  <path d="M164,82 Q170,86 176,82" stroke="#8B6F47" stroke-width="2" stroke-linecap="round" fill="none"/>
+                  <g stroke="#B9835A" stroke-width="1.2" stroke-linecap="round">
+                    <path d="M148,74 L128,70"/>
+                    <path d="M148,80 L128,82"/>
+                    <path d="M192,74 L212,70"/>
+                    <path d="M192,80 L212,82"/>
+                  </g>
+                  <circle cx="150" cy="72" r="5" fill="#F0A9A0" opacity=".5"/>
+                  <circle cx="192" cy="72" r="5" fill="#F0A9A0" opacity=".5"/>
+                </g>
+
+                <!-- stage 3+: type-themed accessory clip -->
+                <g id="petAccessoryClip" style="display:none;"></g>
+                <!-- stage 4+: artisan apron -->
+                <g id="petApron" style="display:none;"></g>
+                <!-- stage 4+: brewing tool -->
+                <g id="petTool" style="display:none;"></g>
+                <!-- stage 5: master crown -->
+                <g id="petCrown" style="display:none;"></g>
 
                 <!-- stage 5: sparkles -->
                 <g id="petSparkles" style="display:none;"></g>
@@ -1387,6 +1461,16 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <div class="sheet-overlay" id="petNameOverlay"></div>
+    <div class="sheet" id="petNameSheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <div class="sheet-date">寵物命名</div>
+      </div>
+      <input type="text" class="pet-name-input" id="petNameInput" placeholder="輸入名字..." maxlength="12">
+      <button class="add-btn" id="petNameSaveBtn">儲存</button>
     </div>
 
     <!-- ============ CALENDAR ============ -->
@@ -1822,6 +1906,22 @@
       <div class="section-title">設定</div>
 
       <div class="settings-group">
+        <div class="settings-label">寵物選擇</div>
+        <div class="pet-options">
+          <div class="pet-card" data-pet="axolotl">
+            <div class="scene-preview p-pet p-pet-axolotl">🩷</div>
+            <span>娃娃魚</span>
+            <div class="scene-check">✓</div>
+          </div>
+          <div class="pet-card" data-pet="guinea">
+            <div class="scene-preview p-pet p-pet-guinea">🐹</div>
+            <span>天竺鼠</span>
+            <div class="scene-check">✓</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-group">
         <div class="settings-label">寵物場景</div>
         <div class="scene-options">
           <div class="scene-card" data-scene="sky">
@@ -1888,19 +1988,16 @@
 
 <script>
 /* ---------------- shared entry data (ISO date keyed) ---------------- */
-const ENTRIES = {
-  '2026-06-29':[{type:'手沖咖啡',rating:4,note:'水溫稍高，帶一點澀味'}],
-  '2026-06-30':[{type:'抹茶',rating:5,note:'今天的茶筅角度抓到感覺了'}],
-  '2026-07-01':[{type:'手沖咖啡',rating:5,note:'耶加雪菲，花香明顯'},{type:'抹茶',rating:3,note:''}],
-  '2026-07-02':[{type:'抹茶',rating:4,note:'早上先來一杯提神'}],
-  '2026-07-05':[{type:'手沖咖啡',rating:4,note:'悶蒸30秒剛好'}],
-  '2026-07-08':[{type:'抹茶',rating:4,note:''},{type:'手沖咖啡',rating:4,note:''}],
-  '2026-07-09':[{type:'手沖咖啡',rating:3,note:''},{type:'抹茶',rating:4,note:''},{type:'手沖咖啡',rating:5,note:'今天最順的一杯'}],
-  '2026-07-12':[{type:'手沖咖啡',rating:2,note:'研磨太細，過萃'}],
-  '2026-07-15':[{type:'手沖咖啡',rating:4,note:''},{type:'手沖咖啡',rating:5,note:''},{type:'抹茶',rating:5,note:''},{type:'抹茶',rating:3,note:''},{type:'手沖咖啡',rating:4,note:'補測試：五杯'}],
-  '2026-07-18':[{type:'抹茶',rating:5,note:'茶粉用量抓到甜點'},{type:'手沖咖啡',rating:4,note:'比較苦一點'}],
-  '2026-07-21':[{type:'手沖咖啡',rating:5,note:''}],
-};
+const ENTRIES_STORAGE_KEY = 'coffeeMatchaEntries';
+let ENTRIES = {};
+try{
+  ENTRIES = JSON.parse(localStorage.getItem(ENTRIES_STORAGE_KEY) || '{}');
+}catch(e){
+  ENTRIES = {};
+}
+function saveEntries(){
+  localStorage.setItem(ENTRIES_STORAGE_KEY, JSON.stringify(ENTRIES));
+}
 
 const WEEKDAY_LABELS = ['日','一','二','三','四','五','六'];
 const today = new Date();
@@ -2058,7 +2155,10 @@ function dominantType(){
 
 const petStageBadge = document.getElementById('petStageBadge');
 const petEgg = document.getElementById('petEgg');
-const petBody = document.getElementById('petBody');
+const petBodies = {
+  axolotl: document.getElementById('petBodyAxolotl'),
+  guinea: document.getElementById('petBodyGuinea'),
+};
 const petGillsNormal = document.getElementById('petGillsNormal');
 const petGillsBaby = document.getElementById('petGillsBaby');
 const petAccessoryClip = document.getElementById('petAccessoryClip');
@@ -2067,6 +2167,10 @@ const petTool = document.getElementById('petTool');
 const petCrown = document.getElementById('petCrown');
 const petSparkles = document.getElementById('petSparkles');
 const petSvgEl = document.getElementById('petSvg');
+
+const PET_TYPE_STORAGE_KEY = 'petType';
+let currentPetType = localStorage.getItem(PET_TYPE_STORAGE_KEY) || 'axolotl';
+if(!petBodies[currentPetType]) currentPetType = 'axolotl';
 
 function applyPetStage(){
   const days = totalRecordedDays();
@@ -2077,7 +2181,9 @@ function applyPetStage(){
 
   const isEgg = info.stage === 1;
   petEgg.style.display = isEgg ? 'block' : 'none';
-  petBody.style.display = isEgg ? 'none' : 'block';
+  Object.entries(petBodies).forEach(([type, el])=>{
+    el.style.display = (!isEgg && type === currentPetType) ? 'block' : 'none';
+  });
   petWalk.classList.toggle('egg-idle', isEgg);
 
   petGillsBaby.style.display = info.stage === 2 ? 'block' : 'none';
@@ -2101,7 +2207,60 @@ function applyPetStage(){
 
   petSvgEl.style.transform = `scale(${info.scale})`;
 }
-applyPetStage();
+
+/* ---------------- SETTINGS: pet type selection ---------------- */
+function applyPetType(type){
+  if(!petBodies[type]) return;
+  currentPetType = type;
+  localStorage.setItem(PET_TYPE_STORAGE_KEY, type);
+  document.querySelectorAll('.pet-card').forEach(c=>{
+    c.classList.toggle('selected', c.dataset.pet === type);
+  });
+  applyPetStage();
+}
+document.querySelectorAll('.pet-card').forEach(card=>{
+  card.addEventListener('click', ()=>applyPetType(card.dataset.pet));
+});
+applyPetType(currentPetType);
+
+/* ---------------- HOME: pet name ---------------- */
+const PET_NAME_STORAGE_KEY = 'petName';
+const petNameBadge = document.getElementById('petNameBadge');
+const petNameText = document.getElementById('petNameText');
+const petNameOverlay = document.getElementById('petNameOverlay');
+const petNameSheet = document.getElementById('petNameSheet');
+const petNameInput = document.getElementById('petNameInput');
+const petNameSaveBtn = document.getElementById('petNameSaveBtn');
+
+function renderPetName(){
+  const name = localStorage.getItem(PET_NAME_STORAGE_KEY) || '';
+  petNameText.textContent = name || '寵物命名';
+  petNameBadge.classList.toggle('unnamed', !name);
+}
+renderPetName();
+
+function openPetNameSheet(){
+  petNameInput.value = localStorage.getItem(PET_NAME_STORAGE_KEY) || '';
+  petNameOverlay.classList.add('open');
+  petNameSheet.classList.add('open');
+  petNameInput.focus();
+}
+function closePetNameSheet(){
+  petNameOverlay.classList.remove('open');
+  petNameSheet.classList.remove('open');
+}
+petNameBadge.addEventListener('click', openPetNameSheet);
+petNameOverlay.addEventListener('click', closePetNameSheet);
+petNameSaveBtn.addEventListener('click', ()=>{
+  const name = petNameInput.value.trim();
+  if(name){
+    localStorage.setItem(PET_NAME_STORAGE_KEY, name);
+  } else {
+    localStorage.removeItem(PET_NAME_STORAGE_KEY);
+  }
+  renderPetName();
+  closePetNameSheet();
+});
 
 /* ---------------- CALENDAR ---------------- */
 const CAL_MIN_YEAR = 2020, CAL_MAX_YEAR = 2100;
@@ -2344,6 +2503,7 @@ document.getElementById('confirmOkBtn').addEventListener('click', ()=>{
   const { key, idx } = pendingDelete;
   ENTRIES[key].splice(idx, 1);
   if(ENTRIES[key].length === 0) delete ENTRIES[key];
+  saveEntries();
   closeConfirm();
   refreshCalendar();
   openSheet(currentOpenDay);
@@ -2963,6 +3123,7 @@ document.getElementById('saveEntryBtn').addEventListener('click', ()=>{
     if(!ENTRIES[key]) ENTRIES[key] = [];
     ENTRIES[key].push(entry);
   }
+  saveEntries();
 
   closeEntrySheet();
   refreshCalendar();
