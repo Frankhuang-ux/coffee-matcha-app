@@ -263,6 +263,114 @@
     width:6px;height:6px;
     border-radius:50%;
   }
+  .flower::before{
+    content:"";
+    position:absolute;
+    inset:-3px;
+    border-radius:50%;
+    background:inherit;
+    opacity:.4;
+  }
+  .bird{
+    position:absolute;
+    width:14px; height:7px;
+    opacity:.6;
+  }
+  .bird::before, .bird::after{
+    content:"";
+    position:absolute;
+    width:7px; height:7px;
+    border-top:1.6px solid var(--ink-soft);
+    border-left:1.6px solid var(--ink-soft);
+    border-radius:100% 0 0 0;
+    top:0;
+  }
+  .bird::before{ left:0; }
+  .bird::after{ left:7px; transform:scaleX(-1); }
+  .tree{
+    position:absolute;
+    bottom:20px;
+    width:4px; height:22px;
+    background:#7A5C3E;
+    border-radius:2px;
+  }
+  .tree::before{
+    content:"";
+    position:absolute;
+    bottom:14px; left:50%;
+    transform:translateX(-50%);
+    width:26px;height:26px;
+    border-radius:50%;
+    background:#6FA150;
+  }
+  .tree::after{
+    content:"";
+    position:absolute;
+    bottom:26px; left:50%;
+    transform:translateX(-50%);
+    width:18px;height:18px;
+    border-radius:50%;
+    background:#7DB65E;
+  }
+  .butterfly{
+    position:absolute;
+    width:12px;height:10px;
+    animation:flutter 2.4s ease-in-out infinite;
+  }
+  .butterfly::before, .butterfly::after{
+    content:"";
+    position:absolute;
+    width:6px;height:9px;
+    border-radius:50% 50% 50% 50%/60% 60% 40% 40%;
+    background:#E8A0C4;
+    opacity:.85;
+    top:0;
+  }
+  .butterfly::before{ left:0; transform:rotate(-18deg); }
+  .butterfly::after{ left:5px; transform:rotate(18deg) scaleX(-1); }
+  @keyframes flutter{
+    0%,100%{ transform:translateY(0); }
+    50%{ transform:translateY(-6px); }
+  }
+  .fish{
+    position:absolute;
+    width:16px; height:9px;
+    border-radius:50%;
+    opacity:.6;
+  }
+  .fish::after{
+    content:"";
+    position:absolute;
+    right:-6px; top:50%;
+    transform:translateY(-50%);
+    width:0;height:0;
+    border-top:4px solid transparent;
+    border-bottom:4px solid transparent;
+    border-right:6px solid currentColor;
+  }
+  .coral{
+    position:absolute;
+    bottom:0;
+    width:6px; height:20px;
+    border-radius:6px 6px 0 0;
+  }
+  .coral::before, .coral::after{
+    content:"";
+    position:absolute;
+    bottom:6px;
+    width:6px; height:16px;
+    border-radius:6px 6px 0 0;
+    background:inherit;
+  }
+  .coral::before{ left:-6px; transform:rotate(-22deg); transform-origin:bottom center; }
+  .coral::after{ right:-6px; transform:rotate(22deg); transform-origin:bottom center; }
+  .starfish{
+    position:absolute;
+    width:14px; height:14px;
+    opacity:.7;
+    background:#E8A94B;
+    clip-path:polygon(50% 0%, 63% 35%, 100% 38%, 71% 60%, 82% 96%, 50% 75%, 18% 96%, 29% 60%, 0% 38%, 37% 35%);
+  }
 
   .wave{
     position:absolute;
@@ -1346,17 +1454,38 @@
         <div class="sun" data-scene-el="sky"></div>
         <div class="cloud c1" data-scene-el="sky"></div>
         <div class="cloud c2" data-scene-el="sky"></div>
+        <div class="cloud" data-scene-el="sky" style="top:14px; left:230px; width:26px; opacity:.65;"></div>
+        <div class="cloud" data-scene-el="sky" style="top:80px; left:60px; width:30px; opacity:.55;"></div>
+        <div class="bird" data-scene-el="sky" style="top:96px; left:200px;"></div>
+        <div class="bird" data-scene-el="sky" style="top:110px; left:222px; transform:scale(.8);"></div>
+        <div class="bird" data-scene-el="sky" style="top:70px; left:280px; transform:scale(.7);"></div>
         <!-- land decor -->
         <div class="hill h1" data-scene-el="land"></div>
         <div class="hill h2" data-scene-el="land"></div>
+        <div class="tree" data-scene-el="land" style="left:34px;"></div>
+        <div class="tree" data-scene-el="land" style="right:70px; transform:scale(.8);"></div>
+        <div class="butterfly" data-scene-el="land" style="top:100px; left:200px;"></div>
+        <div class="flower" data-scene-el="land" style="left:70px; background:#F2A7C4;"></div>
+        <div class="flower" data-scene-el="land" style="left:90px; bottom:58px; background:#F6D96B;"></div>
+        <div class="flower" data-scene-el="land" style="right:100px; background:#FFFFFF;"></div>
+        <div class="flower" data-scene-el="land" style="right:80px; bottom:56px; background:#F2A7C4;"></div>
+        <div class="flower" data-scene-el="land" style="left:130px; bottom:60px; background:#F6D96B;"></div>
         <!-- ocean decor -->
         <div class="bubble" data-scene-el="ocean" style="left:30px; bottom:20px; width:8px; height:8px; animation-delay:0s;"></div>
         <div class="bubble" data-scene-el="ocean" style="left:60px; bottom:10px; width:5px; height:5px; animation-delay:1.2s;"></div>
         <div class="bubble" data-scene-el="ocean" style="left:250px; bottom:16px; width:7px; height:7px; animation-delay:2.4s;"></div>
         <div class="bubble" data-scene-el="ocean" style="left:290px; bottom:30px; width:5px; height:5px; animation-delay:.6s;"></div>
+        <div class="bubble" data-scene-el="ocean" style="left:160px; bottom:12px; width:6px; height:6px; animation-delay:1.8s;"></div>
+        <div class="bubble" data-scene-el="ocean" style="left:200px; bottom:24px; width:4px; height:4px; animation-delay:2.6s;"></div>
         <div class="seaweed" data-scene-el="ocean" style="left:24px; height:34px; animation-delay:0s;"></div>
         <div class="seaweed" data-scene-el="ocean" style="left:40px; height:22px; animation-delay:.4s;"></div>
         <div class="seaweed" data-scene-el="ocean" style="right:28px; height:30px; animation-delay:.2s;"></div>
+        <div class="seaweed" data-scene-el="ocean" style="left:160px; height:18px; animation-delay:.6s;"></div>
+        <div class="fish" data-scene-el="ocean" style="top:60px; left:80px; background:#F6C15C; color:#F6C15C;"></div>
+        <div class="fish" data-scene-el="ocean" style="top:96px; right:60px; background:#FF9F7A; color:#FF9F7A; transform:scaleX(-1);"></div>
+        <div class="coral" data-scene-el="ocean" style="left:100px; background:#E38B7B;"></div>
+        <div class="coral" data-scene-el="ocean" style="right:120px; background:#D97BA0; transform:scale(.8);"></div>
+        <div class="starfish" data-scene-el="ocean" style="bottom:4px; left:200px;"></div>
 
         <div class="pet-stage-badge" id="petStageBadge">蛋蛋期</div>
 
