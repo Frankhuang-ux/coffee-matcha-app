@@ -1,0 +1,2974 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>手沖咖啡 × 抹茶紀錄 - App 線框圖</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#F6F1E7">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="咖啡抹茶紀錄">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F6F1E7;
+    --paper-deep:#EFE7D6;
+    --ink:#2E2A24;
+    --ink-soft:#6B6353;
+    --coffee:#7A4A2B;
+    --matcha:#6B7F4F;
+    --accent:#C4622B;
+    --line:#DDD3BE;
+    --card:#FFFDF8;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#E8E1D2;
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    padding:40px 16px;
+  }
+  .phone{
+    width:390px;
+    height:780px;
+    background:var(--paper);
+    border-radius:40px;
+    box-shadow:0 30px 60px rgba(46,42,36,0.25);
+    overflow:hidden;
+    position:relative;
+    border:8px solid #2E2A24;
+    display:flex;
+    flex-direction:column;
+    /* establishes a containing block so position:fixed sheets/modals
+       stay scoped to the phone frame instead of the real viewport,
+       and never inflate an ancestor's scrollable overflow */
+    transform:translateZ(0);
+  }
+  .notch{
+    position:absolute;
+    top:8px;left:50%;
+    transform:translateX(-50%);
+    width:120px;height:22px;
+    background:#2E2A24;
+    border-radius:0 0 14px 14px;
+    z-index:15;
+  }
+
+  /* Installed as a home-screen app: fill the real device screen,
+     drop the fake phone frame/notch, respect the real safe areas. */
+  @media (display-mode: standalone){
+    body{ padding:0; background:var(--paper); }
+    .phone{
+      width:100vw; height:100vh; height:100dvh;
+      border:none; border-radius:0; box-shadow:none;
+    }
+    .notch{ display:none; }
+    .page{ padding-top: calc(16px + env(safe-area-inset-top)); }
+    .tabbar{ padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
+  }
+
+  /* ---------- Pages ---------- */
+  .pages-wrap{
+    position:relative;
+    flex:1;
+    overflow:hidden;
+  }
+  .pages-wrap::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background-image:radial-gradient(rgba(46,42,36,0.03) 1px, transparent 1px);
+    background-size:8px 8px;
+    pointer-events:none;
+    z-index:0;
+  }
+  .page{
+    position:absolute;
+    inset:0;
+    overflow-y:auto;
+    padding:52px 20px 24px;
+    display:none;
+  }
+  .page.active{ display:block; }
+  .page.center-page.active{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+  }
+
+  /* ---------- Tab bar ---------- */
+  .tabbar{
+    flex-shrink:0;
+    display:flex;
+    background:var(--card);
+    border-top:1px solid var(--line);
+    padding:8px 6px calc(env(safe-area-inset-bottom, 0px) + 8px);
+    z-index:20;
+  }
+  .tab-btn{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:3px;
+    background:none;
+    border:none;
+    padding:6px 4px;
+    cursor:pointer;
+    color:var(--ink-soft);
+    font-family:'Zen Kaku Gothic New', sans-serif;
+  }
+  .tab-btn svg{
+    width:22px;height:22px;
+    stroke:var(--ink-soft);
+    fill:none;
+    stroke-width:1.8;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+    transition:stroke .15s;
+  }
+  .tab-btn span{
+    font-size:10px;
+    transition:color .15s;
+  }
+  .tab-btn.active{ color:var(--accent); }
+  .tab-btn.active svg{ stroke:var(--accent); }
+
+  /* ---------- shared bits ---------- */
+  .section-title{
+    font-family:'Shippori Mincho', serif;
+    font-weight:700;
+    font-size:20px;
+    color:var(--ink);
+    margin:0 0 14px;
+  }
+
+  /* ================= HOME PAGE ================= */
+  .week-strip{
+    display:flex;
+    justify-content:space-between;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:10px 8px;
+  }
+  .week-cell{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    width:32px;
+  }
+  .week-cell .wd{
+    font-size:10px;
+    color:var(--ink-soft);
+  }
+  .week-cell .dotlamp{
+    width:14px;height:14px;
+    border-radius:50%;
+    background:var(--paper-deep);
+    border:1.5px solid var(--line);
+    transition:background .2s, border-color .2s, box-shadow .2s;
+  }
+  .week-cell.lit .dotlamp{
+    background:var(--accent);
+    border-color:var(--accent);
+    box-shadow:0 0 8px 1px rgba(196,98,43,0.55);
+  }
+  .week-cell.is-today .wd{
+    color:var(--ink);
+    font-weight:700;
+  }
+  .week-cell.is-today .dotlamp{
+    box-shadow:0 0 0 2px var(--paper), 0 0 0 3.5px var(--ink);
+  }
+
+  .today-date{
+    text-align:center;
+    margin-top:18px;
+  }
+  .today-date .big{
+    font-family:'Shippori Mincho', serif;
+    font-weight:700;
+    font-size:24px;
+    color:var(--ink);
+  }
+  .today-date .small{
+    font-size:11px;
+    letter-spacing:1px;
+    color:var(--ink-soft);
+    margin-top:2px;
+  }
+
+  .pet-scene{
+    position:relative;
+    margin-top:16px;
+    height:230px;
+    border-radius:22px;
+    overflow:hidden;
+    border:1px solid var(--line);
+  }
+  .pet-scene.scene-sky{ background:linear-gradient(180deg,#BFE3F0 0%,#E4F4F6 55%,#DCEFD9 100%); }
+  .pet-scene.scene-land{ background:linear-gradient(180deg,#D9EFE2 0%,#D9EFE2 42%,#B7D98C 42%,#93BE68 100%); }
+  .pet-scene.scene-ocean{ background:linear-gradient(180deg,#CFEFEF 0%,#8FD0DC 45%,#4B9DBE 100%); }
+
+  .sun{
+    position:absolute; top:16px; right:24px;
+    width:32px;height:32px;border-radius:50%;
+    background:#FFE29A;
+    box-shadow:0 0 18px 6px rgba(255,226,154,.6);
+  }
+  .cloud{
+    position:absolute;
+    background:#fff;
+    opacity:.9;
+    border-radius:30px;
+    height:16px;
+  }
+  .cloud::before, .cloud::after{
+    content:"";
+    position:absolute;
+    background:#fff;
+    border-radius:50%;
+  }
+  .cloud::before{ width:18px;height:18px; top:-8px; left:6px; }
+  .cloud::after{ width:14px;height:14px; top:-6px; left:20px; }
+  .cloud.c1{ top:26px; left:20px; width:44px; }
+  .cloud.c2{ top:54px; left:150px; width:34px; opacity:.75; }
+
+  .hill{
+    position:absolute;
+    bottom:-30px;
+    width:180px;height:90px;
+    border-radius:50%;
+    background:#A6CE7C;
+    opacity:.8;
+  }
+  .hill.h1{ left:-50px; }
+  .hill.h2{ right:-60px; bottom:-46px; background:#8DBE64; }
+  .flower{
+    position:absolute;
+    bottom:64px;
+    width:6px;height:6px;
+    border-radius:50%;
+  }
+
+  .wave{
+    position:absolute;
+    left:0; right:0;
+    height:14px;
+    background:rgba(255,255,255,0.35);
+    border-radius:50%;
+  }
+  .bubble{
+    position:absolute;
+    border-radius:50%;
+    background:rgba(255,255,255,0.55);
+    animation:rise 5s linear infinite;
+  }
+  .seaweed{
+    position:absolute;
+    bottom:0;
+    width:8px;
+    border-radius:6px 6px 0 0;
+    background:#4C8F5B;
+    transform-origin:bottom center;
+    animation:sway 3.2s ease-in-out infinite;
+  }
+  @keyframes sway{
+    0%,100%{ transform:rotate(-6deg); }
+    50%{ transform:rotate(6deg); }
+  }
+  @keyframes rise{
+    0%{ transform:translateY(0); opacity:.7; }
+    100%{ transform:translateY(-160px); opacity:0; }
+  }
+
+  .speech-bubble{
+    position:absolute;
+    top:14px; left:50%;
+    transform:translate(-50%,-6px);
+    max-width:200px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:8px 12px;
+    font-size:12px;
+    color:var(--ink);
+    text-align:center;
+    opacity:0;
+    transition:opacity .4s, transform .4s;
+    z-index:5;
+    white-space:nowrap;
+  }
+  .speech-bubble::after{
+    content:"";
+    position:absolute;
+    bottom:-6px; left:50%;
+    transform:translateX(-50%);
+    width:10px;height:10px;
+    background:var(--card);
+    border-right:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+    rotate:45deg;
+  }
+  .speech-bubble.show{
+    opacity:1;
+    transform:translate(-50%,0);
+  }
+
+  .pet-walk{
+    position:absolute;
+    bottom:16px; left:50%;
+    width:96px; height:64px;
+    margin-left:-48px;
+    animation:walk 6s ease-in-out infinite alternate;
+  }
+  @keyframes walk{
+    0%{ transform:translateX(-40px); }
+    100%{ transform:translateX(40px); }
+  }
+  .pet-flip{
+    width:100%; height:100%;
+    transition:transform .15s;
+  }
+  .pet-flip.face-left{ transform:scaleX(-1); }
+  .pet-bob{
+    width:100%; height:100%;
+    animation:bob 1.2s ease-in-out infinite alternate;
+  }
+  @keyframes bob{
+    0%{ transform:translateY(0); }
+    100%{ transform:translateY(-5px); }
+  }
+  .pet-walk.egg-idle{
+    animation: eggPulse 2.4s ease-in-out infinite;
+  }
+  .pet-walk.egg-idle .pet-bob{
+    animation: none;
+  }
+  @keyframes eggPulse{
+    0%,100%{ transform:translateX(0) scale(1); }
+    50%{ transform:translateX(0) scale(1.05); }
+  }
+  #petSvg{ transition:transform .3s ease; transform-origin:center bottom; }
+  .sparkle{
+    animation: twinkle 1.8s ease-in-out infinite;
+    transform-origin:center;
+  }
+  .sparkle-2{ animation-delay:.35s; }
+  .sparkle-3{ animation-delay:.7s; }
+  @keyframes twinkle{
+    0%,100%{ opacity:.35; transform:scale(.7); }
+    50%{ opacity:1; transform:scale(1.15); }
+  }
+  .pet-stage-badge{
+    position:absolute;
+    left:12px; bottom:12px;
+    font-size:9.5px;
+    letter-spacing:.5px;
+    color:var(--ink);
+    background:rgba(255,253,248,0.85);
+    border:1px solid var(--line);
+    padding:3px 9px;
+    border-radius:10px;
+    z-index:5;
+  }
+
+  /* ================= CALENDAR PAGE ================= */
+  .top-row{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    margin-bottom:6px;
+  }
+  .month-title-btn{
+    background:none;
+    border:none;
+    padding:6px 4px;
+    margin:-6px -4px;
+    text-align:left;
+    cursor:pointer;
+    touch-action:manipulation;
+  }
+  .month-title{
+    font-family:'Shippori Mincho', serif;
+    font-weight:700;
+    font-size:26px;
+    color:var(--ink);
+    line-height:1.1;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .month-title-chevron{
+    font-size:15px;
+    color:var(--ink-soft);
+    font-family:'Zen Kaku Gothic New', sans-serif;
+  }
+  .month-sub{
+    font-size:11px;
+    letter-spacing:2px;
+    color:var(--ink-soft);
+    margin-top:4px;
+  }
+
+  .streak-bar{
+    margin-top:16px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:10px 14px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+  .streak-bar b{
+    color:var(--accent);
+    font-size:14px;
+  }
+
+  .weekdays{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    margin-top:20px;
+    margin-bottom:6px;
+  }
+  .weekdays span{
+    text-align:center;
+    font-size:11px;
+    color:var(--ink-soft);
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    row-gap:6px;
+  }
+  .day{
+    aspect-ratio:1/1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    border-radius:14px;
+    cursor:pointer;
+    position:relative;
+    transition:background .15s;
+  }
+  .day:hover{ background:rgba(196,98,43,0.08); }
+  .day.empty{ visibility:hidden; }
+  .day .num{
+    font-size:13px;
+    color:var(--ink);
+    font-weight:500;
+  }
+  .day.today .num{
+    color:#fff;
+    background:var(--ink);
+    width:22px;height:22px;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .dots{
+    display:flex;
+    gap:3px;
+    margin-top:4px;
+    height:8px;
+    align-items:center;
+  }
+  .dot{
+    width:5px;height:5px;
+    border-radius:50%;
+  }
+  .dot.coffee{ background:var(--coffee); }
+  .dot.matcha{ background:var(--matcha); }
+  .plus{
+    font-size:8px;
+    color:var(--accent);
+    font-weight:700;
+    margin-left:1px;
+  }
+  .day.selected{
+    background:var(--paper-deep);
+    box-shadow:inset 0 0 0 1.5px var(--accent);
+  }
+
+  .legend{
+    display:flex;
+    gap:14px;
+    margin-top:18px;
+    font-size:10.5px;
+    color:var(--ink-soft);
+    align-items:center;
+    flex-wrap:wrap;
+  }
+  .legend span{ display:flex; align-items:center; gap:5px; }
+  .legend .dot{ width:6px; height:6px; }
+
+  .hint{
+    text-align:center;
+    font-size:10.5px;
+    color:var(--ink-soft);
+    margin-top:18px;
+    opacity:.8;
+  }
+
+  /* Bottom sheet (shared look) */
+  .sheet-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(46,42,36,0.35);
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+    transition:opacity .25s, visibility 0s linear .25s;
+    z-index:30;
+  }
+  .sheet-overlay.open{
+    opacity:1;
+    visibility:visible;
+    pointer-events:auto;
+    transition:opacity .25s, visibility 0s linear 0s;
+  }
+
+  .sheet{
+    position:fixed;
+    left:0;right:0;bottom:0;
+    background:var(--paper);
+    border-radius:26px 26px 0 0;
+    padding:14px 20px 26px;
+    transform:translateY(100%);
+    visibility:hidden;
+    transition:transform .3s cubic-bezier(.32,.72,0,1), visibility 0s linear .3s;
+    z-index:31;
+    max-height:72%;
+    overflow-y:auto;
+    box-shadow:0 -10px 30px rgba(0,0,0,0.15);
+  }
+  .sheet.open{
+    transform:translateY(0);
+    visibility:visible;
+    transition:transform .3s cubic-bezier(.32,.72,0,1), visibility 0s linear 0s;
+  }
+  .sheet-handle{
+    width:36px;height:4px;
+    background:var(--line);
+    border-radius:2px;
+    margin:0 auto 14px;
+  }
+  .sheet-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:4px;
+  }
+  .sheet-date{
+    font-family:'Shippori Mincho', serif;
+    font-size:19px;
+    font-weight:700;
+    color:var(--ink);
+  }
+  .sheet-total{
+    font-size:12px;
+    color:var(--accent);
+    font-weight:700;
+  }
+  .sheet-sub{
+    font-size:11px;
+    color:var(--ink-soft);
+    margin-bottom:14px;
+  }
+  .entry{
+    position:relative;
+    display:flex;
+    gap:12px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:10px 12px 24px;
+    margin-bottom:10px;
+    cursor:pointer;
+  }
+  .entry-delete{
+    position:absolute;
+    top:6px; right:6px;
+    width:28px;height:28px;
+    border-radius:50%;
+    border:none;
+    background:var(--paper-deep);
+    color:var(--ink-soft);
+    font-size:11px;
+    touch-action:manipulation;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    z-index:2;
+  }
+  .entry-delete:hover{ background:var(--line); color:var(--ink); }
+
+  .confirm-overlay{
+    position:fixed; inset:0;
+    background:rgba(46,42,36,0.4);
+    opacity:0; visibility:hidden; pointer-events:none;
+    transition:opacity .2s, visibility 0s linear .2s;
+    z-index:50;
+  }
+  .confirm-overlay.open{
+    opacity:1; visibility:visible; pointer-events:auto;
+    transition:opacity .2s, visibility 0s linear 0s;
+  }
+  .confirm-modal{
+    position:fixed;
+    left:50%; top:50%;
+    transform:translate(-50%,-50%) scale(0.92);
+    width:250px;
+    background:var(--paper);
+    border-radius:18px;
+    padding:22px 20px 18px;
+    box-shadow:0 20px 40px rgba(0,0,0,0.25);
+    z-index:51;
+    opacity:0; visibility:hidden; pointer-events:none;
+    transition:opacity .2s, transform .2s, visibility 0s linear .2s;
+    text-align:center;
+  }
+  .confirm-modal.open{
+    opacity:1; visibility:visible; pointer-events:auto;
+    transform:translate(-50%,-50%) scale(1);
+    transition:opacity .2s, transform .2s, visibility 0s linear 0s;
+  }
+  .confirm-text{
+    font-size:13.5px;
+    color:var(--ink);
+    margin-bottom:18px;
+    line-height:1.5;
+  }
+  .confirm-actions{
+    display:flex;
+    gap:10px;
+  }
+  .confirm-btn{
+    flex:1;
+    padding:10px 0;
+    border-radius:12px;
+    font-size:13px;
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    cursor:pointer;
+    border:1px solid var(--line);
+    background:var(--card);
+    color:var(--ink);
+  }
+  .confirm-btn.ok{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fff;
+    font-weight:700;
+  }
+  .month-picker-row{
+    display:flex;
+    gap:10px;
+    margin-bottom:18px;
+  }
+  .month-picker-row select{
+    flex:1;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:10px 8px;
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    font-size:14px;
+    color:var(--ink);
+    background:var(--card);
+    text-align:center;
+  }
+  .entry-photo{
+    width:50px;height:50px;
+    border-radius:10px;
+    background:var(--paper-deep);
+    display:flex;align-items:center;justify-content:center;
+    font-size:20px;
+    flex-shrink:0;
+  }
+  .entry-body{ flex:1; min-width:0; }
+  .entry-top{
+    display:flex;
+    align-items:center;
+  }
+  .entry-type{
+    font-size:12px;
+    font-weight:700;
+    color:var(--ink);
+  }
+  .entry-iced-icon{
+    font-size:12px;
+    margin-left:6px;
+  }
+  .entry-rating{
+    position:absolute;
+    bottom:8px; right:12px;
+    font-size:11px;
+    color:var(--accent);
+  }
+  .entry-note{
+    font-size:11px;
+    color:var(--ink-soft);
+    margin-top:3px;
+    line-height:1.4;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .add-btn{
+    display:block;
+    width:100%;
+    margin-top:6px;
+    padding:12px;
+    text-align:center;
+    background:var(--ink);
+    color:var(--paper);
+    border-radius:14px;
+    font-size:13px;
+    font-weight:700;
+    border:none;
+  }
+
+  /* ================= COMMUNITY PAGE ================= */
+  .community-icon{
+    width:56px;height:56px;
+    border-radius:50%;
+    background:var(--card);
+    border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+    margin-bottom:16px;
+  }
+  .community-icon svg{ width:28px;height:28px; stroke:var(--ink-soft); fill:none; stroke-width:1.6; }
+  .community-badge{
+    display:inline-block;
+    font-size:10px;
+    letter-spacing:1.5px;
+    color:var(--accent);
+    background:rgba(196,98,43,0.1);
+    border:1px solid rgba(196,98,43,0.3);
+    padding:3px 10px;
+    border-radius:10px;
+    margin-bottom:12px;
+  }
+  .community-title{
+    font-family:'Shippori Mincho', serif;
+    font-weight:700;
+    font-size:18px;
+    color:var(--ink);
+    margin-bottom:6px;
+  }
+  .community-desc{
+    font-size:12px;
+    color:var(--ink-soft);
+    line-height:1.6;
+    max-width:230px;
+  }
+
+  /* ================= SETTINGS PAGE ================= */
+  .settings-group{
+    margin-bottom:26px;
+  }
+  .settings-label{
+    font-size:11px;
+    color:var(--ink-soft);
+    letter-spacing:1px;
+    margin-bottom:10px;
+  }
+  .scene-options{
+    display:flex;
+    gap:10px;
+  }
+  .scene-card{
+    flex:1;
+    background:var(--card);
+    border:1.5px solid var(--line);
+    border-radius:16px;
+    padding:8px;
+    cursor:pointer;
+    text-align:center;
+    position:relative;
+    transition:border-color .15s;
+  }
+  .scene-card.selected{
+    border-color:var(--accent);
+  }
+  .scene-preview{
+    height:52px;
+    border-radius:10px;
+    margin-bottom:8px;
+  }
+  .scene-preview.p-sky{ background:linear-gradient(180deg,#BFE3F0,#DCEFD9); }
+  .scene-preview.p-land{ background:linear-gradient(180deg,#D9EFE2 42%,#93BE68 42%); }
+  .scene-preview.p-ocean{ background:linear-gradient(180deg,#CFEFEF,#4B9DBE); }
+  .scene-card span{
+    font-size:11px;
+    color:var(--ink);
+  }
+  .scene-check{
+    position:absolute;
+    top:6px; right:6px;
+    width:16px;height:16px;
+    border-radius:50%;
+    background:var(--accent);
+    color:#fff;
+    font-size:10px;
+    display:none;
+    align-items:center;
+    justify-content:center;
+  }
+  .scene-card.selected .scene-check{ display:flex; }
+
+  .settings-list{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    overflow:hidden;
+  }
+  .settings-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:14px 16px;
+    font-size:13px;
+    color:var(--ink);
+    cursor:pointer;
+    border-bottom:1px solid var(--line);
+    background:none;
+    width:100%;
+    border-left:none;border-right:none;border-top:none;
+    text-align:left;
+    font-family:'Zen Kaku Gothic New', sans-serif;
+  }
+  .settings-row:last-child{ border-bottom:none; }
+  .settings-row .chev{ color:var(--ink-soft); font-size:14px; }
+
+  .feedback-textarea{
+    width:100%;
+    min-height:100px;
+    resize:none;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:10px 12px;
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    font-size:13px;
+    color:var(--ink);
+    background:var(--card);
+    margin-bottom:12px;
+  }
+  .feedback-confirm{
+    text-align:center;
+    font-size:12px;
+    color:var(--accent);
+    padding:20px 0;
+    display:none;
+  }
+
+  /* ================= ENTRY FORM (ADD RECORD) ================= */
+  .entry-form-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:4px;
+  }
+  .detail-header-left{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    min-width:0;
+  }
+  .detail-edit-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    flex-shrink:0;
+    font-size:11px;
+    color:var(--ink-soft);
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:4px 9px;
+    cursor:pointer;
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    touch-action:manipulation;
+  }
+  .detail-edit-btn svg{
+    width:12px;height:12px;
+  }
+  .detail-edit-btn:hover{ background:var(--paper-deep); color:var(--ink); }
+  .entry-form-close{
+    width:38px;height:38px;
+    border-radius:50%;
+    border:1px solid var(--line);
+    background:var(--card);
+    color:var(--ink-soft);
+    font-size:14px;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    flex-shrink:0;
+    touch-action:manipulation;
+  }
+  .type-badge{
+    display:inline-block;
+    background:var(--paper-deep);
+    color:var(--coffee);
+    font-size:11px;
+    font-weight:700;
+    padding:4px 10px;
+    border-radius:10px;
+    margin:10px 0 16px;
+  }
+  .field{ margin-bottom:16px; }
+  .field-label{
+    font-size:11px;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+    display:block;
+  }
+  .field select, .field input[type="text"], .field input[type="number"]{
+    width:100%;
+    box-sizing:border-box;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:10px 12px;
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    font-size:13px;
+    color:var(--ink);
+    background:var(--card);
+    appearance:none;
+    -webkit-appearance:none;
+  }
+  .field select{
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%236B6353'/></svg>");
+    background-repeat:no-repeat;
+    background-position:right 12px center;
+    padding-right:28px;
+  }
+  .field-other{ margin-top:8px; }
+  .chip-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .chip{
+    padding:7px 12px;
+    border-radius:14px;
+    border:1px solid var(--line);
+    background:var(--card);
+    font-size:12px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    transition:background .15s, border-color .15s, color .15s;
+    font-family:'Zen Kaku Gothic New', sans-serif;
+  }
+  .chip.selected{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fff;
+  }
+  .chip.chip-add{ border-style:dashed; }
+  .chip-input-row{
+    display:flex;
+    gap:8px;
+    margin-top:8px;
+  }
+  .chip-input-row input{
+    flex:1;
+    box-sizing:border-box;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:8px 10px;
+    font-size:12px;
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    background:var(--card);
+    color:var(--ink);
+  }
+  .chip-input-row button{
+    border:none;
+    background:var(--ink);
+    color:var(--paper);
+    border-radius:10px;
+    padding:0 14px;
+    font-size:12px;
+    cursor:pointer;
+  }
+  .adv-toggle{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:12px 4px;
+    border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+    font-size:12.5px;
+    color:var(--ink);
+    cursor:pointer;
+    margin:6px 0 14px;
+  }
+  .adv-toggle .chevron{
+    transition:transform .2s;
+    color:var(--ink-soft);
+  }
+  .adv-toggle.open .chevron{ transform:rotate(180deg); }
+  .adv-body{ display:none; }
+  .adv-body.open{ display:block; }
+  .segmented{ display:flex; gap:8px; }
+  .segmented button{
+    flex:1;
+    padding:9px 0;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:var(--card);
+    font-size:12.5px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    font-family:'Zen Kaku Gothic New', sans-serif;
+  }
+  .segmented button.active{
+    background:var(--ink);
+    border-color:var(--ink);
+    color:var(--paper);
+  }
+  .slider-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .slider-row input[type="range"]{
+    flex:1;
+    accent-color:var(--accent);
+  }
+  .slider-val{
+    font-size:12.5px;
+    color:var(--ink);
+    font-weight:700;
+    min-width:52px;
+    text-align:right;
+  }
+  .temp-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:6px 12px;
+    background:var(--card);
+  }
+  .temp-row .icon{ font-size:14px; }
+  .temp-row input{
+    flex:1;
+    border:none;
+    background:none;
+    font-size:13px;
+    color:var(--ink);
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    padding:6px 0;
+  }
+  .temp-row .unit{ font-size:12px; color:var(--ink-soft); }
+  .timer-field{ margin-bottom:12px; }
+  .timer-field .tf-label{
+    font-size:11px;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  .timer-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:6px 8px 6px 12px;
+    background:var(--card);
+  }
+  .timer-row input{
+    flex:1;
+    border:none;
+    background:none;
+    font-size:13px;
+    color:var(--ink);
+    font-family:'Zen Kaku Gothic New', sans-serif;
+  }
+  .timer-btn{
+    width:32px;height:32px;
+    border-radius:50%;
+    border:none;
+    background:var(--ink);
+    color:var(--paper);
+    font-size:13px;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+  }
+  .timer-btn.running{ background:var(--accent); }
+  .entry-meta{
+    font-size:11px;
+    color:var(--ink-soft);
+    margin-top:3px;
+  }
+  .entry-flavors{
+    display:flex;
+    flex-wrap:wrap;
+    gap:4px;
+    margin-top:6px;
+  }
+  .flavor-chip{
+    font-size:10px;
+    color:var(--matcha);
+    background:rgba(107,127,79,0.12);
+    padding:2px 7px;
+    border-radius:8px;
+  }
+  .detail-photo{
+    width:100%;
+    height:170px;
+    border-radius:14px;
+    overflow:hidden;
+    margin-bottom:14px;
+    background:var(--paper-deep);
+    display:flex;align-items:center;justify-content:center;
+    font-size:44px;
+  }
+  .detail-photo img{ width:100%; height:100%; object-fit:cover; }
+  .detail-row{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    padding:9px 0;
+    border-bottom:1px solid var(--line);
+    font-size:12.5px;
+  }
+  .detail-row:last-child{ border-bottom:none; }
+  .detail-row .k{ color:var(--ink-soft); flex-shrink:0; }
+  .detail-row .v{ color:var(--ink); font-weight:700; text-align:right; }
+  .detail-note{
+    font-size:12.5px;
+    color:var(--ink);
+    background:var(--paper-deep);
+    border-radius:12px;
+    padding:10px 12px;
+    margin:12px 0;
+    line-height:1.6;
+  }
+  .detail-flavors{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-top:12px;
+  }
+  .quick-block{ margin:14px 0 20px; }
+  .quick-row{
+    display:flex;
+    gap:14px;
+    align-items:flex-start;
+  }
+  .photo-upload{
+    position:relative;
+    width:64px;height:64px;
+    flex-shrink:0;
+    border-radius:14px;
+    border:1.5px dashed var(--line);
+    background:var(--card);
+    cursor:pointer;
+    overflow:hidden;
+  }
+  .photo-placeholder{
+    width:100%;height:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:2px;
+  }
+  .photo-placeholder .photo-icon{ font-size:16px; }
+  .photo-placeholder .photo-text{ font-size:9px; color:var(--ink-soft); }
+  .photo-upload img{
+    width:100%;height:100%;
+    object-fit:cover;
+    display:none;
+  }
+  .photo-remove{
+    position:absolute;
+    top:3px;right:3px;
+    width:16px;height:16px;
+    border-radius:50%;
+    border:none;
+    background:rgba(46,42,36,0.65);
+    color:#fff;
+    font-size:9px;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+  }
+  .rating-block{ flex:1; }
+  .star-row{
+    display:flex;
+    gap:6px;
+  }
+  .star{
+    font-size:24px;
+    line-height:1;
+    color:var(--line);
+    cursor:pointer;
+    transition:color .15s;
+  }
+  .star.active{ color:var(--accent); }
+  .entry-photo img{
+    width:100%;height:100%;
+    object-fit:cover;
+    border-radius:10px;
+  }
+  .type-toggle{
+    display:flex;
+    gap:8px;
+    margin:10px 0 16px;
+  }
+  .type-toggle-btn{
+    flex:1;
+    padding:10px 0;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:var(--card);
+    font-size:13px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    transition:background .15s, border-color .15s, color .15s;
+  }
+  .type-toggle-btn.active[data-type="coffee"]{
+    background:var(--coffee);
+    border-color:var(--coffee);
+    color:#fff;
+  }
+  .type-toggle-btn.active[data-type="matcha"]{
+    background:var(--matcha);
+    border-color:var(--matcha);
+    color:#fff;
+  }
+  .checkbox-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:13px;
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .checkbox-row input[type="checkbox"]{
+    width:18px;height:18px;
+    accent-color:var(--matcha);
+    flex-shrink:0;
+  }
+  .sub-label{
+    font-size:10.5px;
+    color:var(--ink-soft);
+    margin:0 0 6px;
+  }
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="notch"></div>
+
+  <div class="pages-wrap">
+
+    <!-- ============ HOME ============ -->
+    <div class="page active" id="page-home">
+      <div class="week-strip" id="weekStrip"></div>
+
+      <div class="today-date">
+        <div class="big" id="todayBig"></div>
+        <div class="small" id="todaySmall">TODAY'S BREW</div>
+      </div>
+
+      <div class="pet-scene scene-sky" id="petScene">
+        <!-- sky decor -->
+        <div class="sun" data-scene-el="sky"></div>
+        <div class="cloud c1" data-scene-el="sky"></div>
+        <div class="cloud c2" data-scene-el="sky"></div>
+        <!-- land decor -->
+        <div class="hill h1" data-scene-el="land"></div>
+        <div class="hill h2" data-scene-el="land"></div>
+        <!-- ocean decor -->
+        <div class="bubble" data-scene-el="ocean" style="left:30px; bottom:20px; width:8px; height:8px; animation-delay:0s;"></div>
+        <div class="bubble" data-scene-el="ocean" style="left:60px; bottom:10px; width:5px; height:5px; animation-delay:1.2s;"></div>
+        <div class="bubble" data-scene-el="ocean" style="left:250px; bottom:16px; width:7px; height:7px; animation-delay:2.4s;"></div>
+        <div class="bubble" data-scene-el="ocean" style="left:290px; bottom:30px; width:5px; height:5px; animation-delay:.6s;"></div>
+        <div class="seaweed" data-scene-el="ocean" style="left:24px; height:34px; animation-delay:0s;"></div>
+        <div class="seaweed" data-scene-el="ocean" style="left:40px; height:22px; animation-delay:.4s;"></div>
+        <div class="seaweed" data-scene-el="ocean" style="right:28px; height:30px; animation-delay:.2s;"></div>
+
+        <div class="pet-stage-badge" id="petStageBadge">蛋蛋期</div>
+
+        <div class="speech-bubble" id="speechBubble"></div>
+
+        <div class="pet-walk" id="petWalk">
+          <div class="pet-flip" id="petFlip">
+            <div class="pet-bob">
+              <svg viewBox="0 0 220 140" width="100%" height="100%" id="petSvg">
+                <!-- ===== Stage 1: egg ===== -->
+                <g id="petEgg">
+                  <ellipse cx="110" cy="122" rx="30" ry="5" fill="rgba(46,42,36,0.08)"/>
+                  <path d="M110,28 C152,28 170,80 150,110 C132,134 88,134 70,110 C50,80 68,28 110,28 Z" fill="#FBDCE8" stroke="#F0AECB" stroke-width="2"/>
+                  <circle cx="90" cy="58" r="4" fill="#F0AECB" opacity=".6"/>
+                  <circle cx="130" cy="82" r="3" fill="#F0AECB" opacity=".6"/>
+                  <circle cx="104" cy="98" r="3.5" fill="#F0AECB" opacity=".6"/>
+                  <circle cx="128" cy="52" r="2.6" fill="#F0AECB" opacity=".6"/>
+                  <ellipse cx="93" cy="50" rx="11" ry="7" fill="#fff" opacity=".55"/>
+                  <path d="M98,36 l7,11 l-9,4 l7,10" stroke="#E896B8" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity=".7"/>
+                </g>
+
+                <!-- ===== Stage 2-5: body ===== -->
+                <g id="petBody" style="display:none;">
+                  <ellipse cx="30" cy="82" rx="26" ry="16" fill="#F6B8CE"/>
+                  <ellipse cx="95" cy="78" rx="66" ry="34" fill="#F8C4D6"/>
+                  <ellipse cx="100" cy="96" rx="42" ry="14" fill="#FBD9E4"/>
+                  <ellipse cx="66" cy="106" rx="11" ry="7" fill="#F6B8CE"/>
+                  <ellipse cx="134" cy="106" rx="11" ry="7" fill="#F6B8CE"/>
+                  <circle cx="70" cy="70" r="4" fill="#E88BAE" opacity=".7"/>
+                  <circle cx="120" cy="70" r="4" fill="#E88BAE" opacity=".7"/>
+                  <ellipse cx="164" cy="62" rx="40" ry="34" fill="#F8C4D6"/>
+
+                  <g id="petGillsNormal">
+                    <g stroke="#EE9CBB" stroke-width="5" stroke-linecap="round" fill="none">
+                      <path d="M188,34 Q206,22 214,6"/>
+                      <path d="M192,46 Q212,40 222,26"/>
+                      <path d="M190,58 Q212,58 222,50"/>
+                    </g>
+                    <g stroke="#EE9CBB" stroke-width="5" stroke-linecap="round" fill="none">
+                      <path d="M158,28 Q152,10 158,-4"/>
+                      <path d="M148,32 Q136,18 134,2"/>
+                    </g>
+                  </g>
+                  <g id="petGillsBaby" style="display:none;">
+                    <g stroke="#EE9CBB" stroke-width="5" stroke-linecap="round" fill="none">
+                      <path d="M188,40 Q198,32 202,22"/>
+                      <path d="M190,50 Q204,46 210,38"/>
+                    </g>
+                    <g stroke="#EE9CBB" stroke-width="5" stroke-linecap="round" fill="none">
+                      <path d="M158,32 Q154,20 158,10"/>
+                    </g>
+                  </g>
+
+                  <circle cx="150" cy="56" r="3.2" fill="#3A2E2A"/>
+                  <circle cx="151.2" cy="54.6" r="1" fill="#fff"/>
+                  <circle cx="180" cy="56" r="3.2" fill="#3A2E2A"/>
+                  <circle cx="181.2" cy="54.6" r="1" fill="#fff"/>
+                  <path d="M158,72 Q165,77 172,72" stroke="#B4527A" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+                  <circle cx="146" cy="68" r="5" fill="#F49CBB" opacity=".5"/>
+                  <circle cx="184" cy="68" r="5" fill="#F49CBB" opacity=".5"/>
+
+                  <!-- stage 3+: type-themed accessory clip -->
+                  <g id="petAccessoryClip" style="display:none;"></g>
+                  <!-- stage 4+: artisan apron -->
+                  <g id="petApron" style="display:none;"></g>
+                  <!-- stage 4+: brewing tool -->
+                  <g id="petTool" style="display:none;"></g>
+                  <!-- stage 5: master crown -->
+                  <g id="petCrown" style="display:none;"></g>
+                </g>
+
+                <!-- stage 5: sparkles -->
+                <g id="petSparkles" style="display:none;"></g>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ CALENDAR ============ -->
+    <div class="page" id="page-calendar">
+      <div class="top-row">
+        <button type="button" class="month-title-btn" id="monthTitleBtn">
+          <div class="month-title" id="monthTitle">7月 · 2026 <span class="month-title-chevron">▾</span></div>
+          <div class="month-sub">RECORDS</div>
+        </button>
+      </div>
+
+      <div class="streak-bar">
+        <span>本月已紀錄 <b id="monthCount">0</b> 天</span>
+        <span>連續 <b id="streakCount">0</b> 天 🔥</span>
+      </div>
+
+      <div class="weekdays">
+        <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+      </div>
+
+      <div class="grid" id="grid"></div>
+
+      <div class="legend">
+        <span><i class="dot coffee"></i>手沖咖啡</span>
+        <span><i class="dot matcha"></i>抹茶</span>
+        <span style="color:var(--accent)">● 超過3杯，點進去看總數</span>
+      </div>
+
+      <div class="hint">點任一天，查看當日沖煮紀錄</div>
+
+      <div class="sheet-overlay" id="overlay"></div>
+      <div class="sheet" id="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+          <div class="sheet-date" id="sheetDate">-</div>
+          <div class="sheet-total" id="sheetTotal">-</div>
+        </div>
+        <div class="sheet-sub">今天的沖煮紀錄</div>
+        <div id="entryList"></div>
+        <button class="add-btn" id="openAddEntryBtn">+ 新增這天的紀錄</button>
+      </div>
+
+      <div class="sheet-overlay" id="entryOverlay" style="z-index:32;"></div>
+      <div class="sheet" id="entrySheet" style="z-index:33;">
+        <div class="sheet-handle"></div>
+        <div class="entry-form-header">
+          <div class="sheet-date" id="entryDateLabel">新增紀錄</div>
+          <div class="entry-form-close" id="entryCloseBtn">✕</div>
+        </div>
+        <div class="type-toggle" id="typeToggle">
+          <button type="button" class="type-toggle-btn active" data-type="coffee">☕ 手沖咖啡</button>
+          <button type="button" class="type-toggle-btn" data-type="matcha">🍵 抹茶</button>
+        </div>
+
+        <div class="quick-block">
+          <div class="quick-row">
+            <div class="photo-upload" id="photoUpload">
+              <input type="file" id="photoInput" accept="image/*" style="display:none;">
+              <div class="photo-placeholder" id="photoPlaceholder">
+                <span class="photo-icon">📷</span>
+                <span class="photo-text">新增照片</span>
+              </div>
+              <img id="photoPreview" alt="">
+              <button type="button" class="photo-remove" id="photoRemoveBtn">✕</button>
+            </div>
+            <div class="rating-block">
+              <label class="field-label">評分</label>
+              <div class="star-row" id="starRow">
+                <span class="star" data-star="1">★</span>
+                <span class="star" data-star="2">★</span>
+                <span class="star" data-star="3">★</span>
+                <span class="star" data-star="4">★</span>
+                <span class="star" data-star="5">★</span>
+              </div>
+            </div>
+          </div>
+          <div class="field" style="margin-top:12px;">
+            <label class="field-label">一句話心得</label>
+            <input type="text" id="fNote" placeholder="今天這杯感覺如何呢？（選填）">
+          </div>
+        </div>
+
+        <div id="coffeeFields">
+        <div class="field">
+          <label class="field-label">產地</label>
+          <select id="fOrigin">
+            <option value="">請選擇產地</option>
+            <option>衣索比亞</option>
+            <option>肯亞</option>
+            <option>哥倫比亞</option>
+            <option>巴拿馬</option>
+            <option>瓜地馬拉</option>
+            <option>宏都拉斯</option>
+            <option>哥斯大黎加</option>
+            <option>巴西</option>
+            <option>印尼</option>
+            <option>盧安達</option>
+            <option>薩爾瓦多</option>
+            <option>秘魯</option>
+            <option value="other">其他</option>
+          </select>
+          <input type="text" class="field-other" id="fOriginOther" placeholder="請輸入產地" style="display:none;">
+        </div>
+
+        <div class="field">
+          <label class="field-label">處理廠</label>
+          <input type="text" id="fMill" placeholder="例如：La Esmeralda 莊園">
+        </div>
+
+        <div class="field">
+          <label class="field-label">處理法</label>
+          <select id="fProcess">
+            <option value="">請選擇處理法</option>
+            <option>日曬</option>
+            <option>水洗</option>
+            <option>蜜處理</option>
+            <option value="other">其他</option>
+          </select>
+          <input type="text" class="field-other" id="fProcessOther" placeholder="請輸入處理法" style="display:none;">
+        </div>
+
+        <div class="field">
+          <label class="field-label">烘焙度</label>
+          <select id="fRoast">
+            <option value="">請選擇烘焙度</option>
+            <option>重烘焙</option>
+            <option>中烘焙</option>
+            <option>淺烘焙</option>
+            <option value="other">其他</option>
+          </select>
+          <input type="text" class="field-other" id="fRoastOther" placeholder="請輸入烘焙度" style="display:none;">
+        </div>
+
+        <div class="field">
+          <label class="field-label">風味標籤（可複選）</label>
+          <div class="chip-row" id="flavorChips">
+            <button type="button" class="chip" data-flavor="花香">花香</button>
+            <button type="button" class="chip" data-flavor="果酸">果酸</button>
+            <button type="button" class="chip" data-flavor="堅果">堅果</button>
+            <button type="button" class="chip" data-flavor="巧克力">巧克力</button>
+            <button type="button" class="chip" data-flavor="莓果">莓果</button>
+            <button type="button" class="chip" data-flavor="柑橘">柑橘</button>
+            <button type="button" class="chip" data-flavor="焦糖">焦糖</button>
+            <button type="button" class="chip" data-flavor="香料">香料</button>
+            <button type="button" class="chip chip-add" id="flavorOtherBtn">＋ 其他</button>
+          </div>
+          <div class="chip-input-row" id="flavorOtherRow" style="display:none;">
+            <input type="text" id="flavorOtherInput" placeholder="輸入風味後按新增">
+            <button type="button" id="flavorOtherAdd">新增</button>
+          </div>
+        </div>
+
+        <div class="adv-toggle" id="advToggleCoffee">
+          <span>進階參數</span>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="adv-body" id="advBodyCoffee">
+
+          <div class="field">
+            <label class="field-label">是否冰沖</label>
+            <div class="segmented" id="icedSeg">
+              <button type="button" data-iced="否">否</button>
+              <button type="button" data-iced="是">是</button>
+            </div>
+          </div>
+
+          <div class="field" id="iceWeightField" style="display:none;">
+            <label class="field-label">冰塊重量</label>
+            <div class="temp-row">
+              <span class="icon">🧊</span>
+              <input type="number" id="fIceWeight" placeholder="100" min="0" step="5">
+              <span class="unit">g</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">粉水比 (1 : X)</label>
+            <div class="slider-row">
+              <input type="range" id="fRatio" min="8" max="20" step="0.5" value="15">
+              <span class="slider-val" id="fRatioVal">1 : 15</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">水溫</label>
+            <div class="temp-row">
+              <span class="icon">🌡️</span>
+              <input type="number" id="fTemp" placeholder="92" min="70" max="100">
+              <span class="unit">°C</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">研磨刻度</label>
+            <div class="segmented" id="grindSeg">
+              <button type="button" data-grind="粗">粗</button>
+              <button type="button" data-grind="中">中</button>
+              <button type="button" data-grind="細">細</button>
+            </div>
+          </div>
+
+          <div class="field timer-field">
+            <div class="tf-label">悶蒸時間</div>
+            <div class="timer-row">
+              <button type="button" class="timer-btn" id="bloomTimerBtn">▶</button>
+              <input type="text" id="fBloomTime" placeholder="00:30">
+            </div>
+          </div>
+
+          <div class="field timer-field">
+            <div class="tf-label">總沖煮時間</div>
+            <div class="timer-row">
+              <button type="button" class="timer-btn" id="totalTimerBtn">▶</button>
+              <input type="text" id="fTotalTime" placeholder="02:30">
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">沖煮器具</label>
+            <div class="chip-row" id="deviceChips">
+              <button type="button" class="chip" data-device="V60">V60</button>
+              <button type="button" class="chip" data-device="Kalita">Kalita</button>
+              <button type="button" class="chip" data-device="聰明濾杯">聰明濾杯</button>
+              <button type="button" class="chip" data-device="Chemex">Chemex</button>
+              <button type="button" class="chip" data-device="愛樂壓">愛樂壓</button>
+              <button type="button" class="chip" data-device="法壓壺">法壓壺</button>
+              <button type="button" class="chip chip-add" id="deviceOtherBtn">＋ 其他</button>
+            </div>
+            <div class="chip-input-row" id="deviceOtherRow" style="display:none;">
+              <input type="text" id="deviceOtherInput" placeholder="輸入器具後按新增">
+              <button type="button" id="deviceOtherAdd">新增</button>
+            </div>
+          </div>
+
+        </div>
+        </div>
+
+        <div id="matchaFields" style="display:none;">
+          <div class="field">
+            <label class="field-label">產地</label>
+            <select id="mOrigin">
+              <option value="">請選擇產地</option>
+              <option>京都宇治</option>
+              <option>愛知西尾</option>
+              <option>福岡八女</option>
+              <option>鹿兒島</option>
+              <option>静岡</option>
+              <option>三重</option>
+              <option value="other">其他</option>
+            </select>
+            <input type="text" class="field-other" id="mOriginOther" placeholder="請輸入產地" style="display:none;">
+          </div>
+
+          <div class="field">
+            <label class="field-label">等級</label>
+            <select id="mGrade">
+              <option value="">請選擇等級</option>
+              <option>儀式用</option>
+              <option>特選</option>
+              <option>日常用</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label class="field-label">風味標籤</label>
+            <div class="sub-label">香氣</div>
+            <div class="chip-row" id="aromaChips">
+              <button type="button" class="chip" data-aroma="海苔香">海苔香</button>
+              <button type="button" class="chip" data-aroma="青草香">青草香</button>
+              <button type="button" class="chip" data-aroma="堅果香">堅果香</button>
+              <button type="button" class="chip" data-aroma="花香">花香</button>
+              <button type="button" class="chip" data-aroma="奶香">奶香</button>
+              <button type="button" class="chip chip-add" id="aromaOtherBtn">＋ 其他</button>
+            </div>
+            <div class="chip-input-row" id="aromaOtherRow" style="display:none;">
+              <input type="text" id="aromaOtherInput" placeholder="輸入香氣後按新增">
+              <button type="button" id="aromaOtherAdd">新增</button>
+            </div>
+
+            <div class="sub-label" style="margin-top:12px;">甘澀苦味平衡</div>
+            <div class="chip-row" id="balanceChips">
+              <button type="button" class="chip" data-balance="回甘明顯">回甘明顯</button>
+              <button type="button" class="chip" data-balance="甘苦平衡">甘苦平衡</button>
+              <button type="button" class="chip" data-balance="苦味明顯">苦味明顯</button>
+              <button type="button" class="chip" data-balance="澀感明顯">澀感明顯</button>
+              <button type="button" class="chip" data-balance="順口不澀">順口不澀</button>
+              <button type="button" class="chip chip-add" id="balanceOtherBtn">＋ 其他</button>
+            </div>
+            <div class="chip-input-row" id="balanceOtherRow" style="display:none;">
+              <input type="text" id="balanceOtherInput" placeholder="輸入描述後按新增">
+              <button type="button" id="balanceOtherAdd">新增</button>
+            </div>
+          </div>
+
+          <div class="adv-toggle" id="advToggleMatcha">
+            <span>進階參數</span>
+            <span class="chevron">▾</span>
+          </div>
+          <div class="adv-body" id="advBodyMatcha">
+
+            <div class="field">
+              <label class="field-label">粉重量</label>
+              <div class="temp-row">
+                <span class="icon">⚖️</span>
+                <input type="number" id="mPowderWeight" placeholder="2" min="0" step="0.5">
+                <span class="unit">g</span>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">粉水比 (1 : X ml)</label>
+              <div class="slider-row">
+                <input type="range" id="mRatio" min="7" max="11" step="0.5" value="9">
+                <span class="slider-val" id="mRatioVal">1 : 9</span>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">水溫</label>
+              <div class="temp-row">
+                <span class="icon">🌡️</span>
+                <input type="number" id="mTemp" placeholder="80" min="60" max="100">
+                <span class="unit">°C</span>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">茶筅類型</label>
+              <div class="segmented" id="chasenSeg">
+                <button type="button" data-chasen="傳統竹製">傳統竹製</button>
+                <button type="button" data-chasen="電動奶泡器">電動奶泡器</button>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">用水</label>
+              <div class="segmented" id="waterSeg">
+                <button type="button" data-water="過濾水">過濾水</button>
+                <button type="button" data-water="礦泉水">礦泉水</button>
+                <button type="button" data-water="自來水">自來水</button>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">基底</label>
+              <select id="mBase">
+                <option value="">請選擇基底</option>
+                <option>牛奶</option>
+                <option>燕麥奶</option>
+                <option>豆奶</option>
+                <option>杏仁奶</option>
+                <option>椰奶</option>
+                <option>水</option>
+                <option>氣泡水</option>
+                <option value="other">其他</option>
+              </select>
+              <input type="text" class="field-other" id="mBaseOther" placeholder="請輸入基底" style="display:none;">
+            </div>
+
+            <div class="field">
+              <label class="field-label">基底重量</label>
+              <div class="temp-row">
+                <span class="icon">🥛</span>
+                <input type="number" id="mBaseWeight" placeholder="120" min="0" step="5">
+                <span class="unit">ml</span>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="checkbox-row">
+                <input type="checkbox" id="mSifted">
+                <span>已過篩</span>
+              </label>
+            </div>
+
+          </div>
+        </div>
+
+        <button class="add-btn" id="saveEntryBtn">儲存紀錄</button>
+      </div>
+
+      <div class="confirm-overlay" id="confirmOverlay"></div>
+      <div class="confirm-modal" id="confirmModal">
+        <div class="confirm-text">確定要刪除此筆紀錄嗎？</div>
+        <div class="confirm-actions">
+          <button type="button" class="confirm-btn" id="confirmCancelBtn">取消</button>
+          <button type="button" class="confirm-btn ok" id="confirmOkBtn">確定</button>
+        </div>
+      </div>
+
+      <div class="sheet-overlay" id="detailOverlay" style="z-index:34;"></div>
+      <div class="sheet" id="detailSheet" style="z-index:35;">
+        <div class="sheet-handle"></div>
+        <div class="entry-form-header">
+          <div class="detail-header-left">
+            <div class="sheet-date" id="detailTitle">紀錄詳情</div>
+            <button type="button" class="detail-edit-btn" id="detailEditBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+              編輯
+            </button>
+          </div>
+          <div class="entry-form-close" id="detailCloseBtn">✕</div>
+        </div>
+        <div id="detailBody"></div>
+      </div>
+
+      <div class="confirm-overlay" id="monthPickerOverlay"></div>
+      <div class="confirm-modal" id="monthPickerModal">
+        <div class="confirm-text">選擇年月</div>
+        <div class="month-picker-row">
+          <select id="pickYear"></select>
+          <select id="pickMonth"></select>
+        </div>
+        <div class="confirm-actions">
+          <button type="button" class="confirm-btn" id="monthPickerCancel">取消</button>
+          <button type="button" class="confirm-btn ok" id="monthPickerGo">前往</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ COMMUNITY ============ -->
+    <div class="page center-page" id="page-community">
+      <div class="community-icon">
+        <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="16.5" cy="9.5" r="2.4"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><path d="M14.5 20c0-2.6-1.1-4.7-2.8-6"/></svg>
+      </div>
+      <div class="community-badge">COMING SOON</div>
+      <div class="community-title">社群功能製作中</div>
+      <div class="community-desc">之後可以在這裡分享沖煮心得、向大家請教沖法，敬請期待。</div>
+    </div>
+
+    <!-- ============ SETTINGS ============ -->
+    <div class="page" id="page-settings">
+      <div class="section-title">設定</div>
+
+      <div class="settings-group">
+        <div class="settings-label">寵物場景</div>
+        <div class="scene-options">
+          <div class="scene-card" data-scene="sky">
+            <div class="scene-preview p-sky"></div>
+            <span>天空</span>
+            <div class="scene-check">✓</div>
+          </div>
+          <div class="scene-card" data-scene="land">
+            <div class="scene-preview p-land"></div>
+            <span>陸地</span>
+            <div class="scene-check">✓</div>
+          </div>
+          <div class="scene-card" data-scene="ocean">
+            <div class="scene-preview p-ocean"></div>
+            <span>海洋</span>
+            <div class="scene-check">✓</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-label">其他</div>
+        <div class="settings-list">
+          <button class="settings-row" id="feedbackBtn"><span>意見反饋</span><span class="chev">›</span></button>
+        </div>
+      </div>
+
+      <div class="sheet-overlay" id="feedbackOverlay"></div>
+      <div class="sheet" id="feedbackSheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+          <div class="sheet-date">意見反饋</div>
+        </div>
+        <div class="sheet-sub">有任何想法或問題都可以告訴我們</div>
+        <div id="feedbackForm">
+          <textarea class="feedback-textarea" id="feedbackText" placeholder="輸入你的意見..."></textarea>
+          <button class="add-btn" id="feedbackSubmit">送出</button>
+        </div>
+        <div class="feedback-confirm" id="feedbackConfirm">感謝你的意見反饋 🌱</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="tabbar">
+    <button class="tab-btn active" data-page="home">
+      <svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>
+      <span>首頁</span>
+    </button>
+    <button class="tab-btn" data-page="calendar">
+      <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>
+      <span>行事曆</span>
+    </button>
+    <button class="tab-btn" data-page="community">
+      <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="16.5" cy="9.5" r="2.4"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><path d="M14.5 20c0-2.6-1.1-4.7-2.8-6"/></svg>
+      <span>社群</span>
+    </button>
+    <button class="tab-btn" data-page="settings">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3.4M12 18.1v3.4M4.2 4.2l2.4 2.4M17.4 17.4l2.4 2.4M2.5 12h3.4M18.1 12h3.4M4.2 19.8l2.4-2.4M17.4 6.6l2.4-2.4"/></svg>
+      <span>設定</span>
+    </button>
+  </div>
+</div>
+
+<script>
+/* ---------------- shared entry data (ISO date keyed) ---------------- */
+const ENTRIES = {
+  '2026-06-29':[{type:'手沖咖啡',rating:4,note:'水溫稍高，帶一點澀味'}],
+  '2026-06-30':[{type:'抹茶',rating:5,note:'今天的茶筅角度抓到感覺了'}],
+  '2026-07-01':[{type:'手沖咖啡',rating:5,note:'耶加雪菲，花香明顯'},{type:'抹茶',rating:3,note:''}],
+  '2026-07-02':[{type:'抹茶',rating:4,note:'早上先來一杯提神'}],
+  '2026-07-05':[{type:'手沖咖啡',rating:4,note:'悶蒸30秒剛好'}],
+  '2026-07-08':[{type:'抹茶',rating:4,note:''},{type:'手沖咖啡',rating:4,note:''}],
+  '2026-07-09':[{type:'手沖咖啡',rating:3,note:''},{type:'抹茶',rating:4,note:''},{type:'手沖咖啡',rating:5,note:'今天最順的一杯'}],
+  '2026-07-12':[{type:'手沖咖啡',rating:2,note:'研磨太細，過萃'}],
+  '2026-07-15':[{type:'手沖咖啡',rating:4,note:''},{type:'手沖咖啡',rating:5,note:''},{type:'抹茶',rating:5,note:''},{type:'抹茶',rating:3,note:''},{type:'手沖咖啡',rating:4,note:'補測試：五杯'}],
+  '2026-07-18':[{type:'抹茶',rating:5,note:'茶粉用量抓到甜點'},{type:'手沖咖啡',rating:4,note:'比較苦一點'}],
+  '2026-07-21':[{type:'手沖咖啡',rating:5,note:''}],
+};
+
+const WEEKDAY_LABELS = ['日','一','二','三','四','五','六'];
+const today = new Date();
+
+function pad(n){ return String(n).padStart(2,'0'); }
+function isoOf(y,m,d){ return `${y}-${pad(m+1)}-${pad(d)}`; }
+function isSameDay(a,b){ return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
+
+/* ---------------- tab navigation ---------------- */
+const tabBtns = document.querySelectorAll('.tab-btn');
+const pages = { home:document.getElementById('page-home'), calendar:document.getElementById('page-calendar'), community:document.getElementById('page-community'), settings:document.getElementById('page-settings') };
+tabBtns.forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    tabBtns.forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    Object.values(pages).forEach(p=>p.classList.remove('active'));
+    pages[btn.dataset.page].classList.add('active');
+  });
+});
+
+/* ---------------- HOME: date + week strip ---------------- */
+document.getElementById('todayBig').textContent = `${today.getMonth()+1}月${today.getDate()}日 週${WEEKDAY_LABELS[today.getDay()]}`;
+
+const weekStrip = document.getElementById('weekStrip');
+function renderWeekStrip(){
+  weekStrip.innerHTML = '';
+  const sunday = new Date(today);
+  sunday.setDate(today.getDate() - today.getDay());
+  for(let i=0;i<7;i++){
+    const d = new Date(sunday);
+    d.setDate(sunday.getDate()+i);
+    const key = isoOf(d.getFullYear(), d.getMonth(), d.getDate());
+    const cell = document.createElement('div');
+    cell.className = 'week-cell' + (ENTRIES[key] ? ' lit' : '') + (isSameDay(d,today) ? ' is-today' : '');
+    cell.innerHTML = `<span class="wd">${WEEKDAY_LABELS[d.getDay()]}</span><span class="dotlamp"></span>`;
+    weekStrip.appendChild(cell);
+  }
+}
+renderWeekStrip();
+
+/* ---------------- HOME: pet speech bubble ---------------- */
+const PHRASES = ['好想喝咖啡喔 ☕','抹茶時間到了嗎？🍵','有沖煮的靈感嗎？','要不要來一杯呢？','我在等你的紀錄呦～'];
+const bubble = document.getElementById('speechBubble');
+let phraseIdx = 0;
+function showPhrase(){
+  bubble.textContent = PHRASES[phraseIdx % PHRASES.length];
+  bubble.classList.add('show');
+  setTimeout(()=>bubble.classList.remove('show'), 3000);
+  phraseIdx++;
+}
+showPhrase();
+setInterval(showPhrase, 4200);
+
+/* ---------------- HOME: pet walk direction flip ---------------- */
+const petWalk = document.getElementById('petWalk');
+const petFlip = document.getElementById('petFlip');
+let walkIter = 0;
+petWalk.addEventListener('animationiteration', ()=>{
+  walkIter++;
+  petFlip.classList.toggle('face-left', walkIter % 2 === 1);
+});
+
+/* ---------------- HOME: scene ---------------- */
+const petScene = document.getElementById('petScene');
+function applyScene(scene){
+  petScene.classList.remove('scene-sky','scene-land','scene-ocean');
+  petScene.classList.add('scene-' + scene);
+  document.querySelectorAll('[data-scene-el]').forEach(el=>{
+    el.style.display = el.dataset.sceneEl === scene ? '' : 'none';
+  });
+  document.querySelectorAll('.scene-card').forEach(c=>{
+    c.classList.toggle('selected', c.dataset.scene === scene);
+  });
+  localStorage.setItem('petScene', scene);
+}
+document.querySelectorAll('.scene-card').forEach(card=>{
+  card.addEventListener('click', ()=>applyScene(card.dataset.scene));
+});
+applyScene(localStorage.getItem('petScene') || 'sky');
+
+/* ---------------- HOME: pet growth stages ---------------- */
+function coffeeBeanSvg(x,y,scale){
+  return `<g transform="translate(${x},${y}) scale(${scale})">
+    <ellipse cx="0" cy="0" rx="9" ry="12" fill="#7A4A2B"/>
+    <path d="M0,-9 Q3,0 0,9" stroke="#5C3620" stroke-width="2" fill="none" stroke-linecap="round"/>
+  </g>`;
+}
+function matchaLeafSvg(x,y,scale){
+  return `<g transform="translate(${x},${y}) scale(${scale})">
+    <path d="M0,-12 C10,-8 10,8 0,12 C-10,8 -10,-8 0,-12 Z" fill="#6B7F4F"/>
+    <path d="M0,-9 L0,9" stroke="#4E5E39" stroke-width="1.6"/>
+  </g>`;
+}
+function apronSvg(){
+  return `
+    <path d="M76,80 L124,80 L117,113 Q100,121 83,113 Z" fill="#E9DEC7" stroke="#C9B98F" stroke-width="1.5"/>
+    <path d="M81,80 Q76,67 87,62" stroke="#C9B98F" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M119,80 Q126,67 137,64" stroke="#C9B98F" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <rect x="90" y="92" width="16" height="12" rx="2" fill="#DCCBA6" stroke="#C9B98F" stroke-width="1.2"/>
+  `;
+}
+function dripperSvg(x,y){
+  return `<g transform="translate(${x},${y})">
+    <ellipse cx="0" cy="-11" rx="11" ry="3" fill="#D8A876"/>
+    <path d="M-11,-11 L11,-11 L4,9 L-4,9 Z" fill="#B5713F" stroke="#7A4A2B" stroke-width="1.4"/>
+  </g>`;
+}
+function chasenSvg(x,y){
+  const bristles = Array.from({length:6}).map((_,i)=>{
+    const a = -35 + i*14;
+    const rad = a*Math.PI/180;
+    return `<line x1="0" y1="-4" x2="${(Math.sin(rad)*11).toFixed(1)}" y2="${(-4-Math.cos(rad)*11).toFixed(1)}" stroke="#D9C08A" stroke-width="1.6" stroke-linecap="round"/>`;
+  }).join('');
+  return `<g transform="translate(${x},${y})">
+    <rect x="-3" y="-4" width="6" height="15" rx="2.5" fill="#C9A66B"/>
+    ${bristles}
+  </g>`;
+}
+function crownSvg(){
+  return `<g transform="translate(164,24)">
+    <path d="M-14,7 L-14,-3 L-7,5 L0,-9 L7,5 L14,-3 L14,7 Z" fill="#E8B84B" stroke="#C9922E" stroke-width="1.2"/>
+    <circle cx="-7" cy="-5" r="2" fill="#F2CB6B"/>
+    <circle cx="0" cy="-9" r="2.3" fill="#F2CB6B"/>
+    <circle cx="7" cy="-5" r="2" fill="#F2CB6B"/>
+  </g>`;
+}
+function sparkleSvg(x,y,cls){
+  return `<g transform="translate(${x},${y})"><g class="sparkle ${cls}">
+    <path d="M0,-7 L1.8,-1.8 L7,0 L1.8,1.8 L0,7 L-1.8,1.8 L-7,0 L-1.8,-1.8 Z" fill="#F2CB6B"/>
+  </g></g>`;
+}
+
+const STAGES = [
+  { stage:1, name:'蛋蛋期', min:0, scale:1 },
+  { stage:2, name:'寶寶期', min:3, scale:0.78 },
+  { stage:3, name:'童年期', min:8, scale:1 },
+  { stage:4, name:'壯年期', min:15, scale:1.1 },
+  { stage:5, name:'職人期', min:30, scale:1.16 },
+];
+function getStageInfo(days){
+  let info = STAGES[0];
+  for(const s of STAGES){ if(days >= s.min) info = s; }
+  return info;
+}
+function totalRecordedDays(){
+  return Object.keys(ENTRIES).filter(k => ENTRIES[k] && ENTRIES[k].length > 0).length;
+}
+function dominantType(){
+  let coffee = 0, matcha = 0;
+  Object.values(ENTRIES).forEach(list=>{
+    (list||[]).forEach(e=>{ if(e.type === '抹茶') matcha++; else coffee++; });
+  });
+  return matcha > coffee ? 'matcha' : 'coffee';
+}
+
+const petStageBadge = document.getElementById('petStageBadge');
+const petEgg = document.getElementById('petEgg');
+const petBody = document.getElementById('petBody');
+const petGillsNormal = document.getElementById('petGillsNormal');
+const petGillsBaby = document.getElementById('petGillsBaby');
+const petAccessoryClip = document.getElementById('petAccessoryClip');
+const petApron = document.getElementById('petApron');
+const petTool = document.getElementById('petTool');
+const petCrown = document.getElementById('petCrown');
+const petSparkles = document.getElementById('petSparkles');
+const petSvgEl = document.getElementById('petSvg');
+
+function applyPetStage(){
+  const days = totalRecordedDays();
+  const dominant = dominantType();
+  const info = getStageInfo(days);
+
+  petStageBadge.textContent = info.name;
+
+  const isEgg = info.stage === 1;
+  petEgg.style.display = isEgg ? 'block' : 'none';
+  petBody.style.display = isEgg ? 'none' : 'block';
+  petWalk.classList.toggle('egg-idle', isEgg);
+
+  petGillsBaby.style.display = info.stage === 2 ? 'block' : 'none';
+  petGillsNormal.style.display = info.stage === 2 ? 'none' : 'block';
+
+  const showAccessory = info.stage >= 3;
+  petAccessoryClip.style.display = showAccessory ? 'block' : 'none';
+  petAccessoryClip.innerHTML = showAccessory ? (dominant === 'matcha' ? matchaLeafSvg(184,26,0.85) : coffeeBeanSvg(184,26,0.85)) : '';
+
+  const showPro = info.stage >= 4;
+  petApron.style.display = showPro ? 'block' : 'none';
+  petApron.innerHTML = showPro ? apronSvg() : '';
+  petTool.style.display = showPro ? 'block' : 'none';
+  petTool.innerHTML = showPro ? (dominant === 'matcha' ? chasenSvg(52,98) : dripperSvg(52,96)) : '';
+
+  const showMaster = info.stage >= 5;
+  petCrown.style.display = showMaster ? 'block' : 'none';
+  petCrown.innerHTML = showMaster ? crownSvg() : '';
+  petSparkles.style.display = showMaster ? 'block' : 'none';
+  petSparkles.innerHTML = showMaster ? (sparkleSvg(36,26,'sparkle-1') + sparkleSvg(198,88,'sparkle-2') + sparkleSvg(104,10,'sparkle-3')) : '';
+
+  petSvgEl.style.transform = `scale(${info.scale})`;
+}
+applyPetStage();
+
+/* ---------------- CALENDAR ---------------- */
+const CAL_MIN_YEAR = 2020, CAL_MAX_YEAR = 2100;
+let CAL_YEAR = today.getFullYear();
+let CAL_MONTH = today.getMonth();
+function updateMonthTitle(){
+  document.getElementById('monthTitle').innerHTML = `${CAL_MONTH+1}月 · ${CAL_YEAR} <span class="month-title-chevron">▾</span>`;
+}
+updateMonthTitle();
+
+function calcStreak(){
+  let count = 0;
+  const d = new Date(today);
+  while(true){
+    const key = isoOf(d.getFullYear(), d.getMonth(), d.getDate());
+    if(ENTRIES[key]){ count++; d.setDate(d.getDate()-1); } else break;
+  }
+  return count;
+}
+function updateStats(){
+  const monthPrefix = `${CAL_YEAR}-${pad(CAL_MONTH+1)}-`;
+  const monthCount = Object.keys(ENTRIES).filter(k=>k.startsWith(monthPrefix) && ENTRIES[k].length>0).length;
+  document.getElementById('monthCount').textContent = monthCount;
+  document.getElementById('streakCount').textContent = calcStreak();
+}
+
+const grid = document.getElementById('grid');
+
+function renderGrid(){
+  const firstWeekday = new Date(CAL_YEAR, CAL_MONTH, 1).getDay();
+  const daysInMonth = new Date(CAL_YEAR, CAL_MONTH+1, 0).getDate();
+  grid.innerHTML = '';
+  for(let i=0;i<firstWeekday;i++){
+    const e = document.createElement('div');
+    e.className='day empty';
+    grid.appendChild(e);
+  }
+
+  for(let d=1; d<=daysInMonth; d++){
+    const key = isoOf(CAL_YEAR, CAL_MONTH, d);
+    const isToday = isSameDay(new Date(CAL_YEAR,CAL_MONTH,d), today);
+    const cell = document.createElement('div');
+    cell.className = 'day' + (isToday ? ' today' : '');
+    cell.dataset.day = d;
+
+    const num = document.createElement('div');
+    num.className='num';
+    num.textContent = d;
+    cell.appendChild(num);
+
+    const dotsWrap = document.createElement('div');
+    dotsWrap.className='dots';
+    const records = ENTRIES[key] || [];
+    const shown = Math.min(records.length, 3);
+    for(let i=0;i<shown;i++){
+      const dot = document.createElement('span');
+      dot.className = 'dot ' + (records[i].type==='抹茶' ? 'matcha':'coffee');
+      dotsWrap.appendChild(dot);
+    }
+    if(records.length > 3){
+      const plus = document.createElement('span');
+      plus.className='plus';
+      plus.textContent='+';
+      dotsWrap.appendChild(plus);
+    }
+    cell.appendChild(dotsWrap);
+
+    cell.addEventListener('click', ()=>openSheet(d));
+    grid.appendChild(cell);
+  }
+}
+renderGrid();
+updateStats();
+
+function refreshCalendar(){
+  renderGrid();
+  updateStats();
+  renderWeekStrip();
+  applyPetStage();
+  const reselected = document.querySelector(`.day[data-day="${currentOpenDay}"]`);
+  if(reselected) reselected.classList.add('selected');
+}
+
+function goToMonth(y, m){
+  let year = y, month = m;
+  if(year < CAL_MIN_YEAR){ year = CAL_MIN_YEAR; month = 0; }
+  if(year > CAL_MAX_YEAR){ year = CAL_MAX_YEAR; month = 11; }
+  CAL_YEAR = year;
+  CAL_MONTH = month;
+  updateMonthTitle();
+  refreshCalendar();
+}
+function changeMonth(delta){
+  let y = CAL_YEAR, m = CAL_MONTH + delta;
+  while(m < 0){ m += 12; y -= 1; }
+  while(m > 11){ m -= 12; y += 1; }
+  goToMonth(y, m);
+}
+
+/* swipe to change month (left = next, right = previous) */
+(function(){
+  let startX = null, startY = null;
+  grid.addEventListener('touchstart', (e)=>{
+    if(sheet.classList.contains('open') || entrySheet.classList.contains('open')) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, {passive:true});
+  grid.addEventListener('touchend', (e)=>{
+    if(startX === null) return;
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+    if(Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5){
+      changeMonth(dx < 0 ? 1 : -1);
+    }
+    startX = null; startY = null;
+  });
+})();
+
+/* month/year picker */
+const monthPickerOverlay = document.getElementById('monthPickerOverlay');
+const monthPickerModal = document.getElementById('monthPickerModal');
+const pickYear = document.getElementById('pickYear');
+const pickMonth = document.getElementById('pickMonth');
+
+for(let y=CAL_MIN_YEAR; y<=CAL_MAX_YEAR; y++){
+  const opt = document.createElement('option');
+  opt.value = y; opt.textContent = y + '年';
+  pickYear.appendChild(opt);
+}
+for(let m=1; m<=12; m++){
+  const opt = document.createElement('option');
+  opt.value = m-1; opt.textContent = m + '月';
+  pickMonth.appendChild(opt);
+}
+
+function openMonthPicker(){
+  pickYear.value = CAL_YEAR;
+  pickMonth.value = CAL_MONTH;
+  monthPickerOverlay.classList.add('open');
+  monthPickerModal.classList.add('open');
+}
+function closeMonthPicker(){
+  monthPickerOverlay.classList.remove('open');
+  monthPickerModal.classList.remove('open');
+}
+document.getElementById('monthTitleBtn').addEventListener('click', openMonthPicker);
+monthPickerOverlay.addEventListener('click', closeMonthPicker);
+document.getElementById('monthPickerCancel').addEventListener('click', closeMonthPicker);
+document.getElementById('monthPickerGo').addEventListener('click', ()=>{
+  goToMonth(Number(pickYear.value), Number(pickMonth.value));
+  closeMonthPicker();
+});
+
+const overlay = document.getElementById('overlay');
+const sheet = document.getElementById('sheet');
+const sheetDate = document.getElementById('sheetDate');
+const sheetTotal = document.getElementById('sheetTotal');
+const entryList = document.getElementById('entryList');
+
+let currentOpenDay = null;
+
+function openSheet(d){
+  currentOpenDay = d;
+  document.querySelectorAll('.day').forEach(el=>el.classList.remove('selected'));
+  const cell = document.querySelector(`.day[data-day="${d}"]`);
+  if(cell) cell.classList.add('selected');
+
+  const key = isoOf(CAL_YEAR, CAL_MONTH, d);
+  const records = ENTRIES[key] || [];
+  sheetDate.textContent = `${CAL_MONTH+1}月${d}日`;
+  sheetTotal.textContent = records.length ? `共 ${records.length} 杯` : '尚無紀錄';
+
+  entryList.innerHTML = '';
+  if(records.length === 0){
+    const empty = document.createElement('div');
+    empty.style.cssText = 'text-align:center;color:var(--ink-soft);font-size:12px;padding:20px 0;';
+    empty.textContent = '這天還沒有紀錄，今天喝了什麼呢？';
+    entryList.appendChild(empty);
+  } else {
+    records.forEach((r, idx)=>{
+      const entry = document.createElement('div');
+      entry.className='entry';
+      const ratingHtml = r.rating ? `<span class="entry-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>` : '';
+      const icedIconHtml = r.iced ? `<span class="entry-iced-icon" title="${r.iced==='是' ? '冰沖' : '熱沖'}">${r.iced==='是' ? '🧊' : '🔥'}</span>` : '';
+      const metaParts = [r.origin, r.process, r.roast, r.mill, r.grade].filter(Boolean);
+      const metaHtml = metaParts.length ? `<div class="entry-meta">${metaParts.join(' · ')}</div>` : '';
+      const flavorsHtml = (r.flavors && r.flavors.length) ? `<div class="entry-flavors">${r.flavors.map(f=>`<span class="flavor-chip">${f}</span>`).join('')}</div>` : '';
+      const noteHtml = r.note ? `<div class="entry-note">${r.note}</div>` : (metaParts.length ? '' : `<div class="entry-note">（沒有留下心得）</div>`);
+      const photoHtml = r.photoUrl ? `<img src="${r.photoUrl}" alt="">` : (r.type==='抹茶'?'🍵':'☕');
+      entry.innerHTML = `
+        <button type="button" class="entry-delete" aria-label="刪除這筆紀錄">✕</button>
+        <div class="entry-photo">${photoHtml}</div>
+        <div class="entry-body">
+          <div class="entry-top">
+            <span class="entry-type">${r.type}</span>
+            ${icedIconHtml}
+            ${ratingHtml}
+          </div>
+          ${metaHtml}
+          ${noteHtml}
+          ${flavorsHtml}
+        </div>`;
+      entry.querySelector('.entry-delete').addEventListener('click', (e)=>{
+        e.stopPropagation();
+        requestDeleteEntry(key, idx);
+      });
+      entry.addEventListener('click', ()=>openDetailView(r, key, idx));
+      entryList.appendChild(entry);
+    });
+  }
+
+  overlay.classList.add('open');
+  sheet.classList.add('open');
+}
+
+overlay.addEventListener('click', ()=>{
+  overlay.classList.remove('open');
+  sheet.classList.remove('open');
+});
+
+/* ---------------- delete entry (with confirm) ---------------- */
+const confirmOverlay = document.getElementById('confirmOverlay');
+const confirmModal = document.getElementById('confirmModal');
+let pendingDelete = null;
+
+function requestDeleteEntry(key, idx){
+  pendingDelete = { key, idx };
+  confirmOverlay.classList.add('open');
+  confirmModal.classList.add('open');
+}
+function closeConfirm(){
+  confirmOverlay.classList.remove('open');
+  confirmModal.classList.remove('open');
+  pendingDelete = null;
+}
+document.getElementById('confirmCancelBtn').addEventListener('click', closeConfirm);
+confirmOverlay.addEventListener('click', closeConfirm);
+document.getElementById('confirmOkBtn').addEventListener('click', ()=>{
+  if(!pendingDelete) return;
+  const { key, idx } = pendingDelete;
+  ENTRIES[key].splice(idx, 1);
+  if(ENTRIES[key].length === 0) delete ENTRIES[key];
+  closeConfirm();
+  refreshCalendar();
+  openSheet(currentOpenDay);
+});
+
+/* ---------------- entry detail view ---------------- */
+const detailOverlay = document.getElementById('detailOverlay');
+const detailSheet = document.getElementById('detailSheet');
+const detailTitle = document.getElementById('detailTitle');
+const detailBody = document.getElementById('detailBody');
+
+let currentDetailContext = null;
+
+function openDetailView(r, dayKey, idx){
+  currentDetailContext = { dayKey, idx };
+  detailTitle.textContent = r.type;
+
+  const photoHtml = r.photoUrl
+    ? `<div class="detail-photo"><img src="${r.photoUrl}" alt=""></div>`
+    : `<div class="detail-photo">${r.type==='抹茶'?'🍵':'☕'}</div>`;
+
+  const ratingHtml = r.rating
+    ? `<div class="detail-row"><span class="k">評分</span><span class="v">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span></div>`
+    : '';
+
+  const fieldDefs = [
+    ['origin','產地'], ['mill','處理廠'], ['process','處理法'], ['roast','烘焙度'],
+    ['grade','等級'], ['ratio','粉水比'], ['iced','是否冰沖'], ['iceWeight','冰塊重量','g'], ['waterTemp','水溫','°C'], ['grindSize','研磨刻度'],
+    ['bloomTime','悶蒸時間'], ['totalTime','總沖煮時間'], ['device','沖煮器具'],
+    ['powderWeight','粉重量','g'], ['chasen','茶筅類型'], ['water','用水'], ['base','基底'], ['baseWeight','基底重量','ml'],
+  ];
+  const rowsHtml = fieldDefs
+    .filter(([key])=>r[key])
+    .map(([key,label,suffix])=>`<div class="detail-row"><span class="k">${label}</span><span class="v">${r[key]}${suffix||''}</span></div>`)
+    .join('');
+  const siftedHtml = r.sifted ? `<div class="detail-row"><span class="k">過篩</span><span class="v">已過篩</span></div>` : '';
+
+  const noteHtml = r.note ? `<div class="detail-note">${r.note}</div>` : '';
+  const flavorsHtml = (r.flavors && r.flavors.length)
+    ? `<div class="detail-flavors">${r.flavors.map(f=>`<span class="flavor-chip">${f}</span>`).join('')}</div>`
+    : '';
+
+  detailBody.innerHTML = `${photoHtml}${ratingHtml}${rowsHtml}${siftedHtml}${noteHtml}${flavorsHtml}`;
+
+  detailOverlay.classList.add('open');
+  detailSheet.classList.add('open');
+}
+function closeDetailView(){
+  detailOverlay.classList.remove('open');
+  detailSheet.classList.remove('open');
+}
+detailOverlay.addEventListener('click', closeDetailView);
+document.getElementById('detailCloseBtn').addEventListener('click', closeDetailView);
+document.getElementById('detailEditBtn').addEventListener('click', ()=>{
+  if(!currentDetailContext) return;
+  const { dayKey, idx } = currentDetailContext;
+  const r = ENTRIES[dayKey][idx];
+  closeDetailView();
+  openEntrySheetForEdit(dayKey, idx, r);
+});
+
+/* ---------------- SETTINGS: feedback sheet ---------------- */
+const feedbackBtn = document.getElementById('feedbackBtn');
+const feedbackOverlay = document.getElementById('feedbackOverlay');
+const feedbackSheet = document.getElementById('feedbackSheet');
+const feedbackForm = document.getElementById('feedbackForm');
+const feedbackConfirm = document.getElementById('feedbackConfirm');
+const feedbackText = document.getElementById('feedbackText');
+const feedbackSubmit = document.getElementById('feedbackSubmit');
+
+function openFeedback(){
+  feedbackForm.style.display = '';
+  feedbackConfirm.style.display = 'none';
+  feedbackText.value = '';
+  feedbackOverlay.classList.add('open');
+  feedbackSheet.classList.add('open');
+}
+function closeFeedback(){
+  feedbackOverlay.classList.remove('open');
+  feedbackSheet.classList.remove('open');
+}
+feedbackBtn.addEventListener('click', openFeedback);
+feedbackOverlay.addEventListener('click', closeFeedback);
+feedbackSubmit.addEventListener('click', ()=>{
+  if(!feedbackText.value.trim()) return;
+  feedbackForm.style.display = 'none';
+  feedbackConfirm.style.display = 'block';
+  setTimeout(closeFeedback, 1300);
+});
+
+/* ---------------- ADD ENTRY (coffee) ---------------- */
+let selectedFlavors = new Set();
+let selectedDevice = null;
+let selectedGrind = null;
+let selectedIced = null;
+let selectedRating = 0;
+let currentPhotoUrl = null;
+
+const photoUpload = document.getElementById('photoUpload');
+const photoInput = document.getElementById('photoInput');
+const photoPlaceholder = document.getElementById('photoPlaceholder');
+const photoPreview = document.getElementById('photoPreview');
+const photoRemoveBtn = document.getElementById('photoRemoveBtn');
+
+photoUpload.addEventListener('click', (e)=>{
+  if(e.target === photoRemoveBtn) return;
+  photoInput.click();
+});
+photoInput.addEventListener('change', ()=>{
+  const file = photoInput.files[0];
+  if(!file) return;
+  currentPhotoUrl = URL.createObjectURL(file);
+  photoPreview.src = currentPhotoUrl;
+  photoPreview.style.display = 'block';
+  photoPlaceholder.style.display = 'none';
+  photoRemoveBtn.style.display = 'flex';
+});
+photoRemoveBtn.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  currentPhotoUrl = null;
+  photoInput.value = '';
+  photoPreview.style.display = 'none';
+  photoPreview.src = '';
+  photoPlaceholder.style.display = 'flex';
+  photoRemoveBtn.style.display = 'none';
+});
+
+document.querySelectorAll('#starRow .star').forEach(star=>{
+  star.addEventListener('click', ()=>{
+    const val = Number(star.dataset.star);
+    selectedRating = (selectedRating === val) ? 0 : val;
+    document.querySelectorAll('#starRow .star').forEach(s=>{
+      s.classList.toggle('active', Number(s.dataset.star) <= selectedRating);
+    });
+  });
+});
+
+function wireOtherReveal(selectId, otherId){
+  const sel = document.getElementById(selectId);
+  const other = document.getElementById(otherId);
+  sel.addEventListener('change', ()=>{
+    other.style.display = sel.value === 'other' ? 'block' : 'none';
+    if(sel.value !== 'other') other.value = '';
+  });
+}
+wireOtherReveal('fOrigin','fOriginOther');
+wireOtherReveal('fProcess','fProcessOther');
+wireOtherReveal('fRoast','fRoastOther');
+
+function wireFlavorChip(chip, value){
+  chip.addEventListener('click', ()=>{
+    if(selectedFlavors.has(value)){ selectedFlavors.delete(value); chip.classList.remove('selected'); }
+    else { selectedFlavors.add(value); chip.classList.add('selected'); }
+  });
+}
+document.querySelectorAll('#flavorChips .chip[data-flavor]').forEach(chip=>wireFlavorChip(chip, chip.dataset.flavor));
+
+const flavorOtherBtn = document.getElementById('flavorOtherBtn');
+const flavorOtherRow = document.getElementById('flavorOtherRow');
+const flavorOtherInput = document.getElementById('flavorOtherInput');
+flavorOtherBtn.addEventListener('click', ()=>{ flavorOtherRow.style.display = 'flex'; flavorOtherInput.focus(); });
+document.getElementById('flavorOtherAdd').addEventListener('click', ()=>{
+  const val = flavorOtherInput.value.trim();
+  if(!val) return;
+  const chip = document.createElement('button');
+  chip.type = 'button';
+  chip.className = 'chip selected';
+  chip.dataset.flavor = val;
+  chip.textContent = val;
+  wireFlavorChip(chip, val);
+  document.getElementById('flavorChips').insertBefore(chip, flavorOtherBtn);
+  selectedFlavors.add(val);
+  flavorOtherInput.value = '';
+  flavorOtherRow.style.display = 'none';
+});
+
+function selectDeviceChip(chip, value){
+  document.querySelectorAll('#deviceChips .chip[data-device]').forEach(c=>c.classList.remove('selected'));
+  chip.classList.add('selected');
+  selectedDevice = value;
+}
+document.querySelectorAll('#deviceChips .chip[data-device]').forEach(chip=>{
+  chip.addEventListener('click', ()=>selectDeviceChip(chip, chip.dataset.device));
+});
+const deviceOtherBtn = document.getElementById('deviceOtherBtn');
+const deviceOtherRow = document.getElementById('deviceOtherRow');
+const deviceOtherInput = document.getElementById('deviceOtherInput');
+deviceOtherBtn.addEventListener('click', ()=>{ deviceOtherRow.style.display = 'flex'; deviceOtherInput.focus(); });
+document.getElementById('deviceOtherAdd').addEventListener('click', ()=>{
+  const val = deviceOtherInput.value.trim();
+  if(!val) return;
+  const chip = document.createElement('button');
+  chip.type = 'button';
+  chip.className = 'chip';
+  chip.dataset.device = val;
+  chip.textContent = val;
+  chip.addEventListener('click', ()=>selectDeviceChip(chip, val));
+  document.getElementById('deviceChips').insertBefore(chip, deviceOtherBtn);
+  selectDeviceChip(chip, val);
+  deviceOtherInput.value = '';
+  deviceOtherRow.style.display = 'none';
+});
+
+document.querySelectorAll('#grindSeg button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('#grindSeg button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedGrind = btn.dataset.grind;
+  });
+});
+
+const iceWeightField = document.getElementById('iceWeightField');
+document.querySelectorAll('#icedSeg button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('#icedSeg button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedIced = btn.dataset.iced;
+    iceWeightField.style.display = selectedIced === '是' ? 'block' : 'none';
+    if(selectedIced !== '是') document.getElementById('fIceWeight').value = '';
+  });
+});
+
+const fRatio = document.getElementById('fRatio');
+const fRatioVal = document.getElementById('fRatioVal');
+fRatio.addEventListener('input', ()=>{ fRatioVal.textContent = `1 : ${fRatio.value}`; });
+
+function wireAdvToggle(toggleId, bodyId){
+  const toggle = document.getElementById(toggleId);
+  const body = document.getElementById(bodyId);
+  toggle.addEventListener('click', ()=>{
+    toggle.classList.toggle('open');
+    body.classList.toggle('open');
+  });
+  return { toggle, body };
+}
+const { toggle: advToggleCoffee, body: advBodyCoffee } = wireAdvToggle('advToggleCoffee','advBodyCoffee');
+const { toggle: advToggleMatcha, body: advBodyMatcha } = wireAdvToggle('advToggleMatcha','advBodyMatcha');
+
+/* ---------------- MATCHA fields ---------------- */
+let selectedAroma = new Set();
+let selectedBalance = new Set();
+let selectedChasen = null;
+let selectedWater = null;
+
+wireOtherReveal('mOrigin','mOriginOther');
+wireOtherReveal('mBase','mBaseOther');
+
+function wireTagChip(chip, value, set){
+  chip.addEventListener('click', ()=>{
+    if(set.has(value)){ set.delete(value); chip.classList.remove('selected'); }
+    else { set.add(value); chip.classList.add('selected'); }
+  });
+}
+document.querySelectorAll('#aromaChips .chip[data-aroma]').forEach(chip=>wireTagChip(chip, chip.dataset.aroma, selectedAroma));
+const aromaOtherBtn = document.getElementById('aromaOtherBtn');
+const aromaOtherRow = document.getElementById('aromaOtherRow');
+const aromaOtherInput = document.getElementById('aromaOtherInput');
+aromaOtherBtn.addEventListener('click', ()=>{ aromaOtherRow.style.display = 'flex'; aromaOtherInput.focus(); });
+document.getElementById('aromaOtherAdd').addEventListener('click', ()=>{
+  const val = aromaOtherInput.value.trim();
+  if(!val) return;
+  const chip = document.createElement('button');
+  chip.type = 'button';
+  chip.className = 'chip selected';
+  chip.dataset.aroma = val;
+  chip.textContent = val;
+  wireTagChip(chip, val, selectedAroma);
+  document.getElementById('aromaChips').insertBefore(chip, aromaOtherBtn);
+  selectedAroma.add(val);
+  aromaOtherInput.value = '';
+  aromaOtherRow.style.display = 'none';
+});
+
+document.querySelectorAll('#balanceChips .chip[data-balance]').forEach(chip=>wireTagChip(chip, chip.dataset.balance, selectedBalance));
+const balanceOtherBtn = document.getElementById('balanceOtherBtn');
+const balanceOtherRow = document.getElementById('balanceOtherRow');
+const balanceOtherInput = document.getElementById('balanceOtherInput');
+balanceOtherBtn.addEventListener('click', ()=>{ balanceOtherRow.style.display = 'flex'; balanceOtherInput.focus(); });
+document.getElementById('balanceOtherAdd').addEventListener('click', ()=>{
+  const val = balanceOtherInput.value.trim();
+  if(!val) return;
+  const chip = document.createElement('button');
+  chip.type = 'button';
+  chip.className = 'chip selected';
+  chip.dataset.balance = val;
+  chip.textContent = val;
+  wireTagChip(chip, val, selectedBalance);
+  document.getElementById('balanceChips').insertBefore(chip, balanceOtherBtn);
+  selectedBalance.add(val);
+  balanceOtherInput.value = '';
+  balanceOtherRow.style.display = 'none';
+});
+
+document.querySelectorAll('#chasenSeg button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('#chasenSeg button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedChasen = btn.dataset.chasen;
+  });
+});
+document.querySelectorAll('#waterSeg button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('#waterSeg button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedWater = btn.dataset.water;
+  });
+});
+
+const mRatio = document.getElementById('mRatio');
+const mRatioVal = document.getElementById('mRatioVal');
+mRatio.addEventListener('input', ()=>{ mRatioVal.textContent = `1 : ${mRatio.value}`; });
+
+/* ---------------- type toggle (coffee / matcha) ---------------- */
+let currentEntryType = 'coffee';
+const coffeeFields = document.getElementById('coffeeFields');
+const matchaFields = document.getElementById('matchaFields');
+document.querySelectorAll('.type-toggle-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    currentEntryType = btn.dataset.type;
+    document.querySelectorAll('.type-toggle-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    coffeeFields.style.display = currentEntryType === 'coffee' ? 'block' : 'none';
+    matchaFields.style.display = currentEntryType === 'matcha' ? 'block' : 'none';
+  });
+});
+
+function makeTimer(btnId, inputId){
+  const btn = document.getElementById(btnId);
+  const input = document.getElementById(inputId);
+  let running = false, seconds = 0, handle = null;
+  btn.addEventListener('click', ()=>{
+    running = !running;
+    btn.textContent = running ? '⏸' : '▶';
+    btn.classList.toggle('running', running);
+    if(running){
+      handle = setInterval(()=>{
+        seconds++;
+        const m = String(Math.floor(seconds/60)).padStart(2,'0');
+        const s = String(seconds%60).padStart(2,'0');
+        input.value = `${m}:${s}`;
+      }, 1000);
+    } else {
+      clearInterval(handle);
+    }
+  });
+  return {
+    reset(){
+      running = false; seconds = 0;
+      clearInterval(handle);
+      btn.textContent = '▶';
+      btn.classList.remove('running');
+      input.value = '';
+    }
+  };
+}
+const bloomTimer = makeTimer('bloomTimerBtn','fBloomTime');
+const totalTimer = makeTimer('totalTimerBtn','fTotalTime');
+
+const entryOverlay = document.getElementById('entryOverlay');
+const entrySheet = document.getElementById('entrySheet');
+const entryDateLabel = document.getElementById('entryDateLabel');
+
+let editingContext = null;
+
+function resetEntryForm(){
+  editingContext = null;
+  ['fOrigin','fProcess','fRoast'].forEach(id=>{ document.getElementById(id).value=''; });
+  document.getElementById('fOriginOther').style.display='none'; document.getElementById('fOriginOther').value='';
+  document.getElementById('fProcessOther').style.display='none'; document.getElementById('fProcessOther').value='';
+  document.getElementById('fRoastOther').style.display='none'; document.getElementById('fRoastOther').value='';
+  document.getElementById('fMill').value='';
+  document.querySelectorAll('#flavorChips .chip').forEach(c=>c.classList.remove('selected'));
+  document.querySelectorAll('#flavorChips .chip[data-flavor]').forEach(c=>{ if(!['花香','果酸','堅果','巧克力','莓果','柑橘','焦糖','香料'].includes(c.dataset.flavor)) c.remove(); });
+  selectedFlavors.clear();
+  fRatio.value = 15; fRatioVal.textContent = '1 : 15';
+  document.getElementById('fTemp').value = '';
+  document.querySelectorAll('#grindSeg button').forEach(b=>b.classList.remove('active'));
+  selectedGrind = null;
+  document.querySelectorAll('#icedSeg button').forEach(b=>b.classList.remove('active'));
+  selectedIced = null;
+  document.getElementById('iceWeightField').style.display = 'none';
+  document.getElementById('fIceWeight').value = '';
+  bloomTimer.reset(); totalTimer.reset();
+  document.querySelectorAll('#deviceChips .chip[data-device]').forEach(c=>{
+    c.classList.remove('selected');
+    if(!['V60','Kalita','聰明濾杯','Chemex','愛樂壓','法壓壺'].includes(c.dataset.device)) c.remove();
+  });
+  selectedDevice = null;
+  advBodyCoffee.classList.remove('open'); advToggleCoffee.classList.remove('open');
+  flavorOtherRow.style.display = 'none';
+  deviceOtherRow.style.display = 'none';
+
+  document.getElementById('fNote').value = '';
+  selectedRating = 0;
+  document.querySelectorAll('#starRow .star').forEach(s=>s.classList.remove('active'));
+  currentPhotoUrl = null;
+  photoInput.value = '';
+  photoPreview.style.display = 'none';
+  photoPreview.src = '';
+  photoPlaceholder.style.display = 'flex';
+  photoRemoveBtn.style.display = 'none';
+
+  document.getElementById('mOrigin').value = '';
+  document.getElementById('mOriginOther').style.display = 'none';
+  document.getElementById('mOriginOther').value = '';
+  document.getElementById('mGrade').value = '';
+  document.querySelectorAll('#aromaChips .chip').forEach(c=>c.classList.remove('selected'));
+  document.querySelectorAll('#aromaChips .chip[data-aroma]').forEach(c=>{ if(!['海苔香','青草香','堅果香','花香','奶香'].includes(c.dataset.aroma)) c.remove(); });
+  selectedAroma.clear();
+  aromaOtherRow.style.display = 'none';
+  document.querySelectorAll('#balanceChips .chip').forEach(c=>c.classList.remove('selected'));
+  document.querySelectorAll('#balanceChips .chip[data-balance]').forEach(c=>{ if(!['回甘明顯','甘苦平衡','苦味明顯','澀感明顯','順口不澀'].includes(c.dataset.balance)) c.remove(); });
+  selectedBalance.clear();
+  balanceOtherRow.style.display = 'none';
+  mRatio.value = 9; mRatioVal.textContent = '1 : 9';
+  document.getElementById('mPowderWeight').value = '';
+  document.getElementById('mTemp').value = '';
+  document.querySelectorAll('#chasenSeg button').forEach(b=>b.classList.remove('active'));
+  selectedChasen = null;
+  document.querySelectorAll('#waterSeg button').forEach(b=>b.classList.remove('active'));
+  selectedWater = null;
+  document.getElementById('mBase').value = '';
+  document.getElementById('mBaseOther').style.display = 'none';
+  document.getElementById('mBaseOther').value = '';
+  document.getElementById('mBaseWeight').value = '';
+  document.getElementById('mSifted').checked = false;
+  advBodyMatcha.classList.remove('open'); advToggleMatcha.classList.remove('open');
+
+  currentEntryType = 'coffee';
+  document.querySelectorAll('.type-toggle-btn').forEach(b=>b.classList.toggle('active', b.dataset.type === 'coffee'));
+  coffeeFields.style.display = 'block';
+  matchaFields.style.display = 'none';
+}
+
+function openEntrySheet(d){
+  entryDateLabel.textContent = `為 ${CAL_MONTH+1}月${d}日 新增紀錄`;
+  resetEntryForm();
+  document.getElementById('saveEntryBtn').textContent = '儲存紀錄';
+  entryOverlay.classList.add('open');
+  entrySheet.classList.add('open');
+}
+function closeEntrySheet(){
+  entryOverlay.classList.remove('open');
+  entrySheet.classList.remove('open');
+  editingContext = null;
+}
+document.getElementById('openAddEntryBtn').addEventListener('click', ()=>{
+  if(currentOpenDay != null) openEntrySheet(currentOpenDay);
+});
+entryOverlay.addEventListener('click', closeEntrySheet);
+document.getElementById('entryCloseBtn').addEventListener('click', closeEntrySheet);
+
+/* ---------------- edit an existing entry ---------------- */
+function setSelectOrOther(selectEl, otherEl, value){
+  if(!value){ selectEl.value=''; otherEl.style.display='none'; otherEl.value=''; return; }
+  const match = Array.from(selectEl.options).some(o=>o.value===value);
+  if(match){
+    selectEl.value = value;
+    otherEl.style.display = 'none';
+  } else {
+    selectEl.value = 'other';
+    otherEl.style.display = 'block';
+    otherEl.value = value;
+  }
+}
+function ensureTagChip(containerId, otherBtnEl, dataAttr, value, set){
+  let chip = Array.from(document.querySelectorAll(`#${containerId} .chip[data-${dataAttr}]`)).find(c=>c.dataset[dataAttr]===value);
+  if(!chip){
+    chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'chip';
+    chip.dataset[dataAttr] = value;
+    chip.textContent = value;
+    wireTagChip(chip, value, set);
+    document.getElementById(containerId).insertBefore(chip, otherBtnEl);
+  }
+  chip.classList.add('selected');
+  set.add(value);
+}
+function ensureDeviceChip(value){
+  let chip = Array.from(document.querySelectorAll('#deviceChips .chip[data-device]')).find(c=>c.dataset.device===value);
+  if(!chip){
+    chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'chip';
+    chip.dataset.device = value;
+    chip.textContent = value;
+    chip.addEventListener('click', ()=>selectDeviceChip(chip, value));
+    document.getElementById('deviceChips').insertBefore(chip, deviceOtherBtn);
+  }
+  selectDeviceChip(chip, value);
+}
+function setSegmented(containerId, dataAttr, value, apply){
+  document.querySelectorAll(`#${containerId} button`).forEach(b=>b.classList.remove('active'));
+  if(!value) return;
+  const btn = Array.from(document.querySelectorAll(`#${containerId} button`)).find(b=>b.dataset[dataAttr]===value);
+  if(btn){ btn.classList.add('active'); apply(value); }
+}
+const AROMA_PRESET = ['海苔香','青草香','堅果香','花香','奶香'];
+
+function openEntrySheetForEdit(dayKey, idx, r){
+  resetEntryForm();
+  editingContext = { dayKey, idx };
+  entryDateLabel.textContent = '編輯這筆紀錄';
+  document.getElementById('saveEntryBtn').textContent = '更新紀錄';
+
+  const type = r.type === '抹茶' ? 'matcha' : 'coffee';
+  document.querySelector(`.type-toggle-btn[data-type="${type}"]`).click();
+
+  if(r.rating) document.querySelector(`#starRow .star[data-star="${r.rating}"]`).click();
+  document.getElementById('fNote').value = r.note || '';
+  if(r.photoUrl){
+    currentPhotoUrl = r.photoUrl;
+    photoPreview.src = r.photoUrl;
+    photoPreview.style.display = 'block';
+    photoPlaceholder.style.display = 'none';
+    photoRemoveBtn.style.display = 'flex';
+  }
+
+  let hasAdvanced = false;
+
+  if(type === 'matcha'){
+    setSelectOrOther(document.getElementById('mOrigin'), document.getElementById('mOriginOther'), r.origin);
+    document.getElementById('mGrade').value = r.grade || '';
+    (r.flavors || []).forEach(f=>{
+      if(AROMA_PRESET.includes(f)) ensureTagChip('aromaChips', aromaOtherBtn, 'aroma', f, selectedAroma);
+      else ensureTagChip('balanceChips', balanceOtherBtn, 'balance', f, selectedBalance);
+    });
+    if(r.powderWeight){ document.getElementById('mPowderWeight').value = r.powderWeight; hasAdvanced = true; }
+    if(r.ratio){ const v = r.ratio.split(':')[1]; mRatio.value = v; mRatioVal.textContent = `1 : ${v}`; if(v!=='9') hasAdvanced = true; }
+    if(r.waterTemp){ document.getElementById('mTemp').value = r.waterTemp; hasAdvanced = true; }
+    if(r.chasen){ setSegmented('chasenSeg','chasen', r.chasen, v=>selectedChasen=v); hasAdvanced = true; }
+    if(r.water){ setSegmented('waterSeg','water', r.water, v=>selectedWater=v); hasAdvanced = true; }
+    if(r.base){ setSelectOrOther(document.getElementById('mBase'), document.getElementById('mBaseOther'), r.base); hasAdvanced = true; }
+    if(r.baseWeight){ document.getElementById('mBaseWeight').value = r.baseWeight; hasAdvanced = true; }
+    if(r.sifted){ document.getElementById('mSifted').checked = true; hasAdvanced = true; }
+    if(hasAdvanced){ advToggleMatcha.classList.add('open'); advBodyMatcha.classList.add('open'); }
+  } else {
+    setSelectOrOther(document.getElementById('fOrigin'), document.getElementById('fOriginOther'), r.origin);
+    document.getElementById('fMill').value = r.mill || '';
+    setSelectOrOther(document.getElementById('fProcess'), document.getElementById('fProcessOther'), r.process);
+    setSelectOrOther(document.getElementById('fRoast'), document.getElementById('fRoastOther'), r.roast);
+    (r.flavors || []).forEach(f=>ensureTagChip('flavorChips', flavorOtherBtn, 'flavor', f, selectedFlavors));
+    if(r.ratio){ const v = r.ratio.split(':')[1]; fRatio.value = v; fRatioVal.textContent = `1 : ${v}`; if(v!=='15') hasAdvanced = true; }
+    if(r.iced){ setSegmented('icedSeg','iced', r.iced, v=>{ selectedIced=v; iceWeightField.style.display = v==='是' ? 'block' : 'none'; }); hasAdvanced = true; }
+    if(r.iceWeight){ document.getElementById('fIceWeight').value = r.iceWeight; hasAdvanced = true; }
+    if(r.waterTemp){ document.getElementById('fTemp').value = r.waterTemp; hasAdvanced = true; }
+    if(r.grindSize){ setSegmented('grindSeg','grind', r.grindSize, v=>selectedGrind=v); hasAdvanced = true; }
+    if(r.bloomTime){ document.getElementById('fBloomTime').value = r.bloomTime; hasAdvanced = true; }
+    if(r.totalTime){ document.getElementById('fTotalTime').value = r.totalTime; hasAdvanced = true; }
+    if(r.device){ ensureDeviceChip(r.device); hasAdvanced = true; }
+    if(hasAdvanced){ advToggleCoffee.classList.add('open'); advBodyCoffee.classList.add('open'); }
+  }
+
+  entryOverlay.classList.add('open');
+  entrySheet.classList.add('open');
+}
+
+document.getElementById('saveEntryBtn').addEventListener('click', ()=>{
+  const shared = {
+    rating: selectedRating || undefined,
+    note: document.getElementById('fNote').value.trim() || undefined,
+    photoUrl: currentPhotoUrl || undefined,
+  };
+
+  let entry;
+  if(currentEntryType === 'matcha'){
+    const originSel = document.getElementById('mOrigin').value;
+    const origin = originSel === 'other' ? document.getElementById('mOriginOther').value.trim() : originSel;
+    const baseSel = document.getElementById('mBase').value;
+    const base = baseSel === 'other' ? document.getElementById('mBaseOther').value.trim() : baseSel;
+    entry = {
+      type: '抹茶',
+      ...shared,
+      origin: origin || undefined,
+      grade: document.getElementById('mGrade').value || undefined,
+      flavors: [...Array.from(selectedAroma), ...Array.from(selectedBalance)],
+      powderWeight: document.getElementById('mPowderWeight').value || undefined,
+      ratio: `1:${mRatio.value}`,
+      waterTemp: document.getElementById('mTemp').value || undefined,
+      chasen: selectedChasen || undefined,
+      water: selectedWater || undefined,
+      base: base || undefined,
+      baseWeight: document.getElementById('mBaseWeight').value || undefined,
+      sifted: document.getElementById('mSifted').checked,
+    };
+  } else {
+    const originSel = document.getElementById('fOrigin').value;
+    const processSel = document.getElementById('fProcess').value;
+    const roastSel = document.getElementById('fRoast').value;
+    const origin = originSel === 'other' ? document.getElementById('fOriginOther').value.trim() : originSel;
+    const process = processSel === 'other' ? document.getElementById('fProcessOther').value.trim() : processSel;
+    const roast = roastSel === 'other' ? document.getElementById('fRoastOther').value.trim() : roastSel;
+    entry = {
+      type: '手沖咖啡',
+      ...shared,
+      origin: origin || undefined,
+      mill: document.getElementById('fMill').value.trim() || undefined,
+      process: process || undefined,
+      roast: roast || undefined,
+      flavors: Array.from(selectedFlavors),
+      ratio: `1:${fRatio.value}`,
+      iced: selectedIced || undefined,
+      iceWeight: (selectedIced === '是') ? (document.getElementById('fIceWeight').value || undefined) : undefined,
+      waterTemp: document.getElementById('fTemp').value || undefined,
+      grindSize: selectedGrind || undefined,
+      bloomTime: document.getElementById('fBloomTime').value || undefined,
+      totalTime: document.getElementById('fTotalTime').value || undefined,
+      device: selectedDevice || undefined,
+    };
+  }
+
+  if(editingContext){
+    ENTRIES[editingContext.dayKey][editingContext.idx] = entry;
+  } else {
+    const key = isoOf(CAL_YEAR, CAL_MONTH, currentOpenDay);
+    if(!ENTRIES[key]) ENTRIES[key] = [];
+    ENTRIES[key].push(entry);
+  }
+
+  closeEntrySheet();
+  refreshCalendar();
+  openSheet(currentOpenDay);
+});
+</script>
+
+</body>
+</html>
